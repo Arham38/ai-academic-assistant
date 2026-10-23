@@ -21,7 +21,7 @@
     "format:check": "prettier --check .",
     "format": "prettier --write .",
     "format:py": "python -m ruff format .",
-    "typecheck:ts": "tsc --noEmit",
+    "typecheck:ts": "npm run typecheck --workspaces --if-present",
     "typecheck:py": "python -m mypy .",
     "check:all": "npm run lint && npm run format:check && npm run typecheck:ts && npm run typecheck:py",
     "prepare": "husky install"
