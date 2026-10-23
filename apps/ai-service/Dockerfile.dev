@@ -1,0 +1,37 @@
+# Development Dockerfile for FastAPI AI & LangGraph Engine
+FROM python:3.11-slim
+
+WORKDIR /app
+
+ENV PYTHONUNBUFFERED=1 \
+    PYTHONDONTWRITEBYTECODE=1 \
+    PIP_NO_CACHE_DIR=1 \
+    POETRY_VERSION=2.5.1 \
+    POETRY_NO_INTERACTION=1
+
+# Install system dependencies for PyTorch, PDF extraction, and network tools
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    build-essential \
+    curl \
+    libgomp1 \
+    && rm -rf /var/lib/apt/lists/*
+
+# Install Poetry
+RUN pip install "poetry==$POETRY_VERSION"
+
+# Disable virtual environment creation inside the container
+RUN poetry config virtualenvs.create false
+
+# Copy dependency definition for caching
+COPY apps/ai-service/pyproject.toml ./
+
+# Install Python packages
+RUN poetry install --no-root
+
+# Copy source code
+COPY apps/ai-service/src/ ./src/
+
+EXPOSE 8000
+
+# Run Uvicorn with hot-reload enabled
+CMD ["uvicorn", "src.main:app", "--host", "0.0.0.0", "--port", "8000", "--reload"]

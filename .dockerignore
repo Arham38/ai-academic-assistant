@@ -1,0 +1,51 @@
+# Universal Docker Build Ignore Rules
+
+# Version Control
+.git/
+.gitignore
+.gitattributes
+
+# Dependencies & Lockfiles (Managed inside container)
+node_modules/
+**/node_modules/
+.venv/
+**/__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Build Outputs & Caches
+dist/
+build/
+.next/
+coverage/
+.cache/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# Local Environment Variables & Secrets
+.env
+.env.*
+!.env.example
+
+# IDE / Editor Files
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS Specific Files
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Logs & Runtime
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+
+# Vector & Mongo Local Persistence
+chroma_data/
+mongo_data/

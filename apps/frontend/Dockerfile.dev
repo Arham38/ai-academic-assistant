@@ -1,0 +1,25 @@
+# Development Dockerfile for React Frontend (Vite)
+FROM node:20-alpine
+
+WORKDIR /app
+
+# Install build dependencies
+RUN apk add --no-cache libc6-compat
+
+# Copy workspace package definitions for efficient layer caching
+COPY package.json package-lock.json tsconfig.base.json ./
+COPY packages/ ./packages/
+COPY apps/frontend/package.json ./apps/frontend/
+
+# Install dependencies (respecting package-lock.json)
+RUN npm install
+
+# Copy application source code
+COPY apps/frontend/ ./apps/frontend/
+
+WORKDIR /app/apps/frontend
+
+EXPOSE 5173
+
+# Bind to 0.0.0.0 for container networking
+CMD ["npm", "run", "dev", "--", "--host", "0.0.0.0"]
