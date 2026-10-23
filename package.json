@@ -12,6 +12,9 @@
   "scripts": {
     "dev:frontend": "npm run dev --workspace=@academic-assistant/frontend",
     "dev:backend": "npm run dev --workspace=@academic-assistant/backend",
+    "test:frontend": "npm run test --workspace=@academic-assistant/frontend",
+    "test:backend": "npm run test --workspace=@academic-assistant/backend",
+    "test": "npm run test:backend && npm run test:frontend",
     "build": "npm run build --workspaces --if-present",
     "lint:ts": "eslint . --ext .ts,.tsx,.js,.jsx",
     "lint:ts:fix": "eslint . --ext .ts,.tsx,.js,.jsx --fix",

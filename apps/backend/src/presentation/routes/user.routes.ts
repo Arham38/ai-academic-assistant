@@ -14,6 +14,7 @@ userRouter.get('/me', requireAuth, (req: Request, res: Response) => {
       user: {
         id: req.user?.id,
         email: req.user?.email,
+        role: req.user?.role,
       },
     },
   });
