@@ -1,0 +1,172 @@
+openapi: 3.1.0
+info:
+  title: AI Academic Assistant - Client Gateway API
+  description: Public-facing REST and SSE API handled by the Node.js Express API Gateway (BFF).
+  version: 1.0.0
+servers:
+  - url: https://api.academic-assistant.internal/api/v1
+    description: Production Gateway
+  - url: http://localhost:5000/api/v1
+    description: Local Development Environment
+
+security:
+  - BearerAuth: []
+
+paths:
+  /auth/login:
+    post:
+      summary: Authenticate user and issue JWT
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email, password]
+              properties:
+                email:
+                  type: string
+                  format: email
+                password:
+                  type: string
+                  format: password
+      responses:
+        '200':
+          description: Authentication successful
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  accessToken:
+                    type: string
+                  user:
+                    type: object
+                    properties:
+                      id: { type: string }
+                      email: { type: string }
+                      role: { type: string, enum: [STUDENT, RESEARCHER, ADMIN] }
+                      tenantId: { type: string }
+        '401':
+          description: Invalid credentials
+
+  /documents/upload:
+    post:
+      summary: Upload PDF document for parsing and queued analysis
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [file]
+              properties:
+                file:
+                  type: string
+                  format: binary
+                  description: PDF document (max 50MB)
+      responses:
+        '202':
+          description: Document accepted and queued for processing
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  jobId: { type: string }
+                  documentId: { type: string }
+                  status: { type: string, example: "QUEUED" }
+                  sseProgressUrl: { type: string, example: "/api/v1/jobs/job_123/events" }
+        '400':
+          description: Invalid file format (non-PDF or corrupted)
+        '429':
+          description: User monthly quota exceeded
+
+  /jobs/{jobId}/events:
+    get:
+      summary: Stream real-time job processing progress via Server-Sent Events (SSE)
+      parameters:
+        - name: jobId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: SSE stream of progress updates
+          content:
+            text/event-stream:
+              schema:
+                type: string
+                example: |
+                  event: progress
+                  data: {"stage": "EMBEDDING", "percentage": 40, "message": "Vectorizing 42 chunks"}
+
+                  event: completed
+                  data: {"stage": "COMPLETED", "reportId": "rep_9988"}
+
+  /reports/{reportId}:
+    get:
+      summary: Retrieve complete academic integrity analysis report
+      parameters:
+        - name: reportId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Full structured report
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  reportId: { type: string }
+                  documentId: { type: string }
+                  summary:
+                    type: object
+                    properties:
+                      overallIntegrityScore: { type: number }
+                      plagiarismPercentage: { type: number }
+                      grammarErrorCount: { type: integer }
+                      citationIssueCount: { type: integer }
+                  plagiarismAnalysis: { type: object }
+                  grammarAnalysis: { type: object }
+                  citationAnalysis: { type: object }
+        '404':
+          description: Report not found or unauthorized tenant access
+
+  /chat/completions:
+    post:
+      summary: Interactive Conversational RAG with Multi-Agent Assistance
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [documentId, prompt]
+              properties:
+                documentId: { type: string }
+                prompt: { type: string }
+                stream: { type: boolean, default: true }
+      responses:
+        '200':
+          description: Streamed token response or JSON completion
+          content:
+            text/event-stream:
+              schema:
+                type: string
+                example: |
+                  data: {"token": "Based", "isFinished": false}
+                  data: {"token": " on", "isFinished": false}
+                  data: {"token": " section", "isFinished": false}
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
