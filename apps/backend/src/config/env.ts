@@ -25,6 +25,7 @@ const envSchema = z.object({
   REDIS_HOST: z.string().default('localhost'),
   REDIS_PORT: z.coerce.number().default(6379),
   INTERNAL_FASTAPI_URL: z.string().url().default('http://localhost:8000'),
+  BCRYPT_SALT_ROUNDS: z.coerce.number().min(8).max(16).default(12),
 });
 
 const parseEnv = () => {
