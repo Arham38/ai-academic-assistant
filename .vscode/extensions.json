@@ -1,0 +1,13 @@
+{
+  "recommendations": [
+    "dbaeumer.vscode-eslint",
+    "esbenp.prettier-vscode",
+    "ms-python.python",
+    "charliermarsh.ruff",
+    "matangover.mypy",
+    "ms-azuretools.vscode-docker",
+    "editorconfig.editorconfig",
+    "jebbs.plantuml",
+    "bierner.markdown-mermaid"
+  ]
+}
