@@ -10,5 +10,6 @@ export interface IUserRepository extends IBaseRepository<User> {
   ): Promise<User | null>;
   incrementTokenVersion(userId: string): Promise<number | null>;
   updateAIUsage(userId: string, tokensConsumed: number): Promise<boolean>;
+  updateLastLogin(userId: string): Promise<boolean>;
   existsByEmail(email: string, tenantId?: string): Promise<boolean>;
 }

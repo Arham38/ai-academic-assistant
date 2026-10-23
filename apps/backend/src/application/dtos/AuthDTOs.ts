@@ -1,0 +1,29 @@
+export interface RegisterUserDTO {
+  firstName: string;
+  lastName: string;
+  email: string;
+  password: string;
+  tenantId?: string;
+}
+
+export interface LoginUserDTO {
+  email: string;
+  password: string;
+  tenantId?: string;
+}
+
+export interface UserResponseDTO {
+  id: string;
+  email: string;
+  firstName: string;
+  lastName: string;
+  role: string;
+}
+
+export interface LoginUserResponseDTO {
+  id: string;
+  email: string;
+  role: string;
+  firstName?: string;
+  lastName?: string;
+}

@@ -199,6 +199,16 @@ export class MongoUserRepository implements IUserRepository {
     );
     return res.modifiedCount > 0;
   }
+
+  public async updateLastLogin(userId: string): Promise<boolean> {
+    const res = await this.model.updateOne(
+      { _id: userId, isDeleted: { $ne: true } },
+      {
+        $set: { 'security.lastLogin': new Date(), updatedAt: new Date() },
+      },
+    );
+    return res.modifiedCount > 0;
+  }
 }
 
 export const mongoUserRepository = new MongoUserRepository();
