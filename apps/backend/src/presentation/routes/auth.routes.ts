@@ -5,6 +5,7 @@ import { LoginUserUseCase } from '../../application/use-cases/auth/LoginUserUseC
 import { MongoUserRepository } from '../../infrastructure/database/mongodb/MongoUserRepository';
 import { UserModel } from '../../infrastructure/database/mongodb/models/UserModel';
 import { BcryptHashProvider } from '../../infrastructure/security/BcryptHashProvider';
+import { JwtTokenProvider } from '../../infrastructure/security/JwtTokenProvider';
 import { env } from '../../config/env';
 import { validateRequest } from '../middleware/validateRequest';
 import { RegisterSchema, LoginSchema } from '../validators/auth.validator';
@@ -12,8 +13,9 @@ import { RegisterSchema, LoginSchema } from '../validators/auth.validator';
 // Factory instantiation for production route mounting
 const userRepository = new MongoUserRepository(UserModel);
 const hashProvider = new BcryptHashProvider(env.BCRYPT_SALT_ROUNDS);
+const tokenProvider = new JwtTokenProvider(env.JWT_SECRET, env.JWT_EXPIRES_IN);
 const registerUserUseCase = new RegisterUserUseCase(userRepository, hashProvider);
-const loginUserUseCase = new LoginUserUseCase(userRepository, hashProvider);
+const loginUserUseCase = new LoginUserUseCase(userRepository, hashProvider, tokenProvider);
 const authController = new AuthController(registerUserUseCase, loginUserUseCase);
 
 const authRouter = Router();

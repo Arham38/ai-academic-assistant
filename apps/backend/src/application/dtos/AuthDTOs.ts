@@ -21,9 +21,12 @@ export interface UserResponseDTO {
 }
 
 export interface LoginUserResponseDTO {
-  id: string;
-  email: string;
-  role: string;
-  firstName?: string;
-  lastName?: string;
+  accessToken: string;
+  user: {
+    id: string;
+    email: string;
+    role: string;
+    firstName?: string;
+    lastName?: string;
+  };
 }

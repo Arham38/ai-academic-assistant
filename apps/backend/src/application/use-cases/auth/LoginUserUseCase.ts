@@ -1,5 +1,6 @@
 import { IUserRepository } from '../../../domain/repositories/IUserRepository';
 import { IHashProvider } from '../../../domain/providers/IHashProvider';
+import { ITokenProvider } from '../../../domain/providers/ITokenProvider';
 import { UnauthorizedError, ForbiddenError } from '../../../domain/errors/AppError';
 import { LoginUserDTO, LoginUserResponseDTO } from '../../dtos/AuthDTOs';
 
@@ -9,11 +10,13 @@ const DUMMY_BCRYPT_HASH = '$2a$12$LQv3c1yqBWVHxkd0LHAkCOYz6TtxMQJqhN8/LewdBPj40c
 /**
  * Encapsulates the business rules for authenticating user credentials.
  * Implements constant-time hash comparison to mitigate user enumeration timing attacks.
+ * Issues cryptographically signed access tokens containing non-sensitive identity and version claims.
  */
 export class LoginUserUseCase {
   constructor(
     private readonly userRepository: IUserRepository,
     private readonly hashProvider: IHashProvider,
+    private readonly tokenProvider: ITokenProvider,
   ) {}
 
   public async execute(dto: LoginUserDTO): Promise<LoginUserResponseDTO> {
@@ -44,13 +47,23 @@ export class LoginUserUseCase {
       await this.userRepository.updateLastLogin(user.id);
     }
 
-    // 6. Return sanitized user profile for authentication response
-    return {
+    // 6. Generate signed cryptographic access token
+    const accessToken = this.tokenProvider.generateAccessToken({
       id: user.id!,
-      email: user.email,
       role: user.role,
-      firstName: user.firstName,
-      lastName: user.lastName,
+      tokenVersion: user.security.tokenVersion,
+    });
+
+    // 7. Return access token and sanitized user profile
+    return {
+      accessToken,
+      user: {
+        id: user.id!,
+        email: user.email,
+        role: user.role,
+        firstName: user.firstName,
+        lastName: user.lastName,
+      },
     };
   }
 }

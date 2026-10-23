@@ -31,16 +31,16 @@ export class AuthController {
   });
 
   public login = asyncHandler(async (req: Request, res: Response) => {
-    const user = await this.loginUserUseCase.execute(req.body);
+    const result = await this.loginUserUseCase.execute(req.body);
 
     res.status(200).json({
       status: 'success',
-      message: 'Login successful. JWTs pending Phase 11 implementation.',
       data: {
+        accessToken: result.accessToken,
         user: {
-          id: user.id,
-          email: user.email,
-          role: user.role,
+          id: result.user.id,
+          email: result.user.email,
+          role: result.user.role,
         },
       },
     });
