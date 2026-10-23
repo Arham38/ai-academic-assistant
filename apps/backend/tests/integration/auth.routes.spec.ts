@@ -126,7 +126,9 @@ describe('Auth API Routes Integration Tests (/api/v1/auth)', () => {
 
       expect(res.status).toBe(200);
       expect(res.body.status).toBe('success');
-      expect(res.body.message).toContain('Login successful');
+      expect(res.body.data.accessToken).toBeDefined();
+      expect(typeof res.body.data.accessToken).toBe('string');
+      expect(res.body.data.accessToken.split('.')).toHaveLength(3);
       expect(res.body.data.user).toBeDefined();
       expect(res.body.data.user.email).toBe('grace.hopper@navy.mil');
       expect(res.body.data.user.role).toBe('STUDENT');

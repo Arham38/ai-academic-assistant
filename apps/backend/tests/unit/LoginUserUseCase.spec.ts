@@ -2,12 +2,14 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { LoginUserUseCase } from '../../src/application/use-cases/auth/LoginUserUseCase';
 import { IUserRepository } from '../../src/domain/repositories/IUserRepository';
 import { IHashProvider } from '../../src/domain/providers/IHashProvider';
+import { ITokenProvider } from '../../src/domain/providers/ITokenProvider';
 import { User } from '../../src/domain/entities/User';
 import { UnauthorizedError, ForbiddenError } from '../../src/domain/errors/AppError';
 
 describe('LoginUserUseCase Unit Tests', () => {
   let mockUserRepository: IUserRepository;
   let mockHashProvider: IHashProvider;
+  let mockTokenProvider: ITokenProvider;
   let useCase: LoginUserUseCase;
 
   beforeEach(() => {
@@ -35,10 +37,15 @@ describe('LoginUserUseCase Unit Tests', () => {
       compare: vi.fn(),
     };
 
-    useCase = new LoginUserUseCase(mockUserRepository, mockHashProvider);
+    mockTokenProvider = {
+      generateAccessToken: vi.fn().mockReturnValue('mocked.jwt.access.token'),
+      verifyToken: vi.fn(),
+    };
+
+    useCase = new LoginUserUseCase(mockUserRepository, mockHashProvider, mockTokenProvider);
   });
 
-  it('should successfully authenticate with valid credentials and return sanitized profile', async () => {
+  it('should successfully authenticate with valid credentials, issue JWT, and return sanitized profile', async () => {
     const existingUser = new User({
       id: 'valid_user_id',
       tenantId: 'default',
@@ -64,13 +71,21 @@ describe('LoginUserUseCase Unit Tests', () => {
       '$2b$12$hashedPasswordRecord12345',
     );
     expect(mockUserRepository.updateLastLogin).toHaveBeenCalledWith('valid_user_id');
+    expect(mockTokenProvider.generateAccessToken).toHaveBeenCalledWith({
+      id: 'valid_user_id',
+      role: 'RESEARCHER',
+      tokenVersion: 1,
+    });
 
     expect(result).toEqual({
-      id: 'valid_user_id',
-      email: 'scholar@institution.edu',
-      role: 'RESEARCHER',
-      firstName: 'Marie',
-      lastName: 'Curie',
+      accessToken: 'mocked.jwt.access.token',
+      user: {
+        id: 'valid_user_id',
+        email: 'scholar@institution.edu',
+        role: 'RESEARCHER',
+        firstName: 'Marie',
+        lastName: 'Curie',
+      },
     });
   });
 
