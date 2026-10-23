@@ -9,8 +9,9 @@ const envSchema = z.object({
   CLIENT_ORIGIN: z.string().default('http://localhost:5173'),
   JWT_SECRET: z
     .string()
-    .min(8, 'JWT_SECRET must be at least 8 characters long')
-    .default('dev_jwt_secret_key_change_in_prod'),
+    .min(32, 'JWT_SECRET must be at least 32 characters long')
+    .default('dev_jwt_secret_key_change_in_production_min_32_characters'),
+  JWT_EXPIRES_IN: z.string().default('15m'),
   INTERNAL_SERVICE_SECRET: z
     .string()
     .min(8, 'INTERNAL_SERVICE_SECRET must be at least 8 characters long')
