@@ -1,6 +1,6 @@
 import { IUserRepository } from '../../../domain/repositories/IUserRepository';
 import { IHashProvider } from '../../../domain/providers/IHashProvider';
-import { User } from '../../../domain/entities/User';
+import { User, SystemRole } from '../../../domain/entities/User';
 import { ConflictError } from '../../../domain/errors/AppError';
 import { RegisterUserDTO, UserResponseDTO } from '../../dtos/AuthDTOs';
 
@@ -33,7 +33,7 @@ export class RegisterUserUseCase {
       passwordHash,
       firstName: dto.firstName.trim(),
       lastName: dto.lastName.trim(),
-      role: 'STUDENT',
+      role: SystemRole.STUDENT,
     });
 
     // 4. Persist to repository

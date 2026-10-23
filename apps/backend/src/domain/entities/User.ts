@@ -1,4 +1,7 @@
-export type UserRole = 'STUDENT' | 'RESEARCHER' | 'ADMIN';
+import { SystemRole } from '../types/Roles';
+
+export type UserRole = SystemRole;
+export { SystemRole };
 export type UserAccountStatus = 'ACTIVE' | 'SUSPENDED' | 'PENDING_VERIFICATION';
 
 export interface AIUsageState {
@@ -61,7 +64,7 @@ export class User {
     this._passwordHash = props.passwordHash;
     this._firstName = props.firstName.trim();
     this._lastName = props.lastName.trim();
-    this._role = props.role ?? 'STUDENT';
+    this._role = props.role ?? SystemRole.STUDENT;
     this._status = props.status ?? 'ACTIVE';
 
     this._aiUsage = {

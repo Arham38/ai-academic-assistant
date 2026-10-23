@@ -1,4 +1,5 @@
 import { Schema, model, Document, Types } from 'mongoose';
+import { SystemRole } from '../../../../domain/types/Roles';
 
 export interface UserDocument extends Document {
   _id: Types.ObjectId;
@@ -7,7 +8,7 @@ export interface UserDocument extends Document {
   passwordHash: string;
   firstName: string;
   lastName: string;
-  role: 'STUDENT' | 'RESEARCHER' | 'ADMIN';
+  role: SystemRole;
   status: 'ACTIVE' | 'SUSPENDED' | 'PENDING_VERIFICATION';
   aiUsage: {
     tokensConsumed: number;
@@ -53,8 +54,8 @@ const UserSchema = new Schema<UserDocument>(
     },
     role: {
       type: String,
-      enum: ['STUDENT', 'RESEARCHER', 'ADMIN'],
-      default: 'STUDENT',
+      enum: Object.values(SystemRole),
+      default: SystemRole.STUDENT,
       required: true,
     },
     status: {

@@ -1,4 +1,4 @@
-import { User, UserRole, UserAccountStatus } from '../../../domain/entities/User';
+import { User, SystemRole, UserAccountStatus } from '../../../domain/entities/User';
 
 export interface RawUserPersistence {
   _id?: unknown;
@@ -39,7 +39,7 @@ export class UserMapper {
       passwordHash: raw.passwordHash,
       firstName: raw.firstName,
       lastName: raw.lastName,
-      role: (raw.role as UserRole) || 'STUDENT',
+      role: (raw.role as SystemRole) || SystemRole.STUDENT,
       status: (raw.status as UserAccountStatus) || 'ACTIVE',
       aiUsage: {
         tokensConsumed: raw.aiUsage?.tokensConsumed ?? 0,

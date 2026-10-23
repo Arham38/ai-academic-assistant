@@ -1,9 +1,9 @@
-import { UserRole } from '../../domain/entities/User';
+import { SystemRole } from '../../domain/types/Roles';
 
 export interface AuthenticatedUser {
   id: string;
   email: string;
-  role: UserRole;
+  role: SystemRole;
   tokenVersion: number;
 }
 
