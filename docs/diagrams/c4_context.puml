@@ -1,0 +1,26 @@
+@startuml c4_context
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Context.puml
+
+LAYOUT_WITH_LEGEND()
+
+title System Context Diagram - AI Academic Assistant
+
+Person(student, "Student / Author", "Uploads academic papers, views plagiarism, grammar, and citation feedback.")
+Person(researcher, "Academic Researcher", "Conducts deep literature cross-referencing and conversational research queries.")
+Person(admin, "Institutional Administrator", "Manages user access, sets scan quotas, and audits academic integrity reports.")
+
+System(academic_assistant, "AI Academic Assistant Platform", "Provides automated semantic plagiarism detection, grammar auditing, citation verification, and agentic RAG exploration.")
+
+System_Ext(crossref, "CrossRef / OpenAlex API", "External academic catalog providing DOI metadata and citation resolution.")
+System_Ext(storage_s3, "Object Storage (S3 / MinIO)", "Encrypted storage for original uploaded PDFs and extracted artifacts.")
+System_Ext(smtp, "Institutional Email / SMTP", "Dispatches scan completion notices and password resets.")
+
+Rel(student, academic_assistant, "Submits documents for verification, reviews integrity reports", "HTTPS")
+Rel(researcher, academic_assistant, "Queries research corpus via Agentic RAG", "HTTPS / WSS")
+Rel(admin, academic_assistant, "Monitors usage quotas, configures system policies", "HTTPS")
+
+Rel(academic_assistant, crossref, "Validates DOIs and fetches citation metadata", "HTTPS / REST")
+Rel(academic_assistant, storage_s3, "Stores and retrieves encrypted PDF documents", "HTTPS / S3 API")
+Rel(academic_assistant, smtp, "Sends notification emails", "SMTP / TLS")
+
+@enduml

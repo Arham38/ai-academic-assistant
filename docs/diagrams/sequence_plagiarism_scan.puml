@@ -1,0 +1,71 @@
+@startuml sequence_plagiarism_scan
+autonumber
+skinparam BoxPadding 10
+skinparam ParticipantPadding 10
+
+title Sequence Diagram: End-to-End Document Plagiarism Scan Workflow
+
+actor User as "Student / Researcher"
+participant SPA as "React SPA (Client)"
+participant BFF as "Node.js Express Gateway"
+participant Redis as "Redis (BullMQ & PubSub)"
+participant AI as "FastAPI AI Engine"
+participant Extractor as "PDF Parser & Chunker"
+participant VectorDB as "ChromaDB"
+participant LangGraph as "LangGraph Multi-Agent"
+database Mongo as "MongoDB"
+
+User -> SPA: 1. Drag & Drop PDF Document
+SPA -> BFF: 2. POST /api/v1/documents/upload (Multipart, JWT)
+BFF -> BFF: 3. Verify JWT, Tenant, Quota & MIME Magic Bytes
+BFF -> BFF: 4. Compute SHA-256 Digest
+BFF -> Mongo: 5. Insert Document Record (Status: 'QUEUED')
+BFF -> Redis: 6. Enqueue Job 'scan-document' {docId, fileUri, tenantId}
+BFF --> SPA: 7. HTTP 202 Accepted {jobId, docId, status: 'QUEUED'}
+
+SPA -> BFF: 8. GET /api/v1/jobs/{jobId}/events (SSE Connection)
+BFF -> Redis: 9. Subscribe to Redis Channel `job:{jobId}:progress`
+
+Redis -> AI: 10. Worker pops 'scan-document' job
+AI -> Redis: 11. Publish Progress Event {stage: 'EXTRACTING', pct: 15}
+Redis -> BFF: 12. Forward Event
+BFF -> SPA: 13. SSE Push {stage: 'EXTRACTING', pct: 15}
+
+AI -> Extractor: 14. Parse PDF text & layout (pdfplumber)
+Extractor --> AI: 15. Extracted text & section boundaries
+AI -> Extractor: 16. Recursive Token Chunking (500 tokens, 50 overlap)
+Extractor --> AI: 17. Chunks [c1, c2, ... cN]
+
+AI -> Redis: 18. Publish Progress Event {stage: 'EMBEDDING', pct: 40}
+Redis -> BFF: 19. Forward Event
+BFF -> SPA: 20. SSE Push {stage: 'EMBEDDING', pct: 40}
+
+AI -> AI: 21. Compute 384-dim Dense Vectors (all-MiniLM-L6-v2)
+AI -> VectorDB: 22. Upsert Chunks with Tenant Metadata {tenant_id, doc_id}
+
+AI -> Redis: 23. Publish Progress Event {stage: 'AGENTIC_ANALYSIS', pct: 70}
+Redis -> BFF: 24. Forward Event
+BFF -> SPA: 25. SSE Push {stage: 'AGENTIC_ANALYSIS', pct: 70}
+
+AI -> LangGraph: 26. Initialize State & Run Agentic Pipeline
+activate LangGraph
+LangGraph -> LangGraph: 27. Planner Agent: Route sub-tasks
+LangGraph -> VectorDB: 28. Plagiarism Agent: k-NN similarity queries
+VectorDB --> LangGraph: 29. Matched Corpus Chunks (Score >= 0.75)
+LangGraph -> LangGraph: 30. Grammar & Citation Agents: Linguistic & DOI auditing
+LangGraph -> LangGraph: 31. Synthesis Agent: Aggregate report & Integrity Score
+LangGraph --> AI: 32. Final Structured Analysis JSON
+deactivate LangGraph
+
+AI -> Mongo: 33. Save AnalysisReport & Update Document (Status: 'COMPLETED')
+AI -> Redis: 34. Publish Event {stage: 'COMPLETED', reportId: '...'}
+Redis -> BFF: 35. Forward Event
+BFF -> SPA: 36. SSE Push {stage: 'COMPLETED', reportId: '...'}
+
+SPA -> BFF: 37. GET /api/v1/reports/{reportId}
+BFF -> Mongo: 38. Query Report by ID & Tenant
+Mongo --> BFF: 39. Return Report Document
+BFF --> SPA: 40. HTTP 200 OK (Render Interactive Report)
+SPA --> User: 41. Displays Plagiarism %, Grammar Highlights, Citation Diffs
+
+@enduml

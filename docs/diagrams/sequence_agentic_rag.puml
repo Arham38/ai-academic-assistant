@@ -1,0 +1,49 @@
+@startuml sequence_agentic_rag
+autonumber
+skinparam BoxPadding 10
+skinparam ParticipantPadding 10
+
+title Sequence Diagram: Conversational Agentic RAG Workflow
+
+actor User as "Researcher"
+participant SPA as "React Client (Chat UI)"
+participant BFF as "Node.js API Gateway"
+participant AI as "FastAPI AI Engine"
+participant Planner as "Planner Agent"
+participant Retriever as "Retriever Agent (ChromaDB)"
+participant Execution as "Specialist Agents (Grammar/Citation/Plagiarism)"
+participant Synthesis as "Synthesis Agent"
+
+User -> SPA: 1. Types prompt ("Analyze literature gap in methodology")
+SPA -> BFF: 2. POST /api/v1/chat/completions (Stream: true, JWT)
+BFF -> BFF: 3. Verify JWT & Apply Token Bucket Rate Limit
+BFF -> AI: 4. POST /internal/v1/agent/query (mTLS / Internal Key)
+
+AI -> Planner: 5. Invoke with User Prompt & Document State
+Planner -> Planner: 6. Classify intent & construct execution DAG
+Planner -> Retriever: 7. Execute Hybrid Retrieval (Vector + BM25)
+Retriever -> Retriever: 8. Query ChromaDB with tenant filter
+Retriever --> Planner: 9. Top-K relevant academic excerpts
+
+Planner -> Execution: 10. Dispatch domain tasks (e.g. check citation consistency)
+Execution --> Planner: 11. Analysis outputs & critique artifacts
+
+Planner -> Synthesis: 12. Synthesize context, citations & response
+activate Synthesis
+Synthesis -> AI: 13. Stream generated token chunk 1
+AI -> BFF: 14. Forward stream chunk
+BFF -> SPA: 15. SSE Chunk: "data: {'token': 'In'} \n\n"
+SPA -> User: 16. Render word in chat window
+
+Synthesis -> AI: 17. Stream token chunk 2...N
+AI -> BFF: 18. Forward stream chunks
+BFF -> SPA: 19. SSE Chunks: "data: {'token': '...'} \n\n"
+SPA -> User: 20. Incremental text rendering
+
+Synthesis -> AI: 21. Stream citations metadata & final frame
+deactivate Synthesis
+AI -> BFF: 22. End of Stream signal
+BFF -> SPA: 23. SSE: "event: done \n\n"
+SPA -> User: 24. Render citation chips and interactive graph links
+
+@enduml

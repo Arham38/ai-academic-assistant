@@ -1,0 +1,34 @@
+@startuml c4_container
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Container.puml
+
+LAYOUT_WITH_LEGEND()
+
+title Container Diagram - AI Academic Assistant Ecosystem
+
+Person(user, "User (Student / Researcher / Admin)", "Accesses system through modern web browser")
+
+System_Boundary(academic_system, "AI Academic Assistant Platform") {
+    Container(spa, "Single Page Application (SPA)", "React 18, Vite, TypeScript, Tailwind CSS, RTK Query", "Provides responsive UI for document upload, analysis dashboards, and real-time streaming RAG chat.")
+    Container(bff, "API Gateway / BFF Service", "Node.js, Express, TypeScript", "Authenticates JWTs, enforces rate limits, manages MongoDB records, handles file upload validation, orchestrates asynchronous jobs.")
+    Container(ai_service, "AI & ML Engine Microservice", "Python 3.11, FastAPI, LangGraph, PyTorch", "Executes context-aware text chunking, dense vector embeddings (all-MiniLM-L6-v2), multi-agent graph reasoning, and semantic plagiarism scoring.")
+    Container(task_broker, "Distributed Task Broker & Cache", "Redis 7.2", "Queues asynchronous document processing jobs and handles real-time Pub/Sub progress events.")
+    ContainerDb(mongo_db, "Primary Relational/Document Datastore", "MongoDB 7.0 Community / Atlas", "Persists user accounts, tenant configurations, document metadata, and finalized analysis reports.")
+    ContainerDb(vector_db, "High-Dimensional Vector Store", "ChromaDB 0.5.x", "Stores dense 384-dimensional chunk embeddings with tenant-isolated metadata indexing.")
+    Container(storage, "Encrypted Object Store", "MinIO / AWS S3", "Persists raw uploaded PDF documents with SHA-256 integrity verification.")
+}
+
+System_Ext(crossref, "CrossRef / OpenAlex API", "External academic catalog providing DOI metadata and citation resolution.")
+
+Rel(user, spa, "Interacts with UI via HTTPS", "HTTPS")
+Rel(spa, bff, "API calls, file uploads, and SSE streams", "HTTPS / JSON / SSE")
+
+Rel(bff, mongo_db, "Reads/writes users, documents, quotas, and reports", "MongoDB Wire Protocol")
+Rel(bff, task_broker, "Pushes scan jobs, subscribes to progress events", "Redis RESP")
+Rel(bff, storage, "Uploads raw PDFs, reads files for processing", "S3 API")
+
+Rel(ai_service, task_broker, "Pulls scan jobs, emits stage progress events", "Redis RESP")
+Rel(ai_service, vector_db, "Inserts chunks and executes k-NN cosine queries", "Internal HTTP / Chroma Client")
+Rel(ai_service, crossref, "Verifies citation validity", "HTTPS / REST")
+Rel(bff, ai_service, "Synchronous conversational RAG queries", "Internal REST / mTLS")
+
+@enduml

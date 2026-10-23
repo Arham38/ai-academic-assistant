@@ -1,0 +1,51 @@
+@startuml c4_component
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-Component.puml
+
+LAYOUT_WITH_LEGEND()
+
+title Component Diagram - BFF & AI Microservices Internal Breakdown
+
+Container_Boundary(bff_boundary, "Node.js Express API Gateway (BFF)") {
+    Component(auth_controller, "Auth Controller", "Express Route Handler", "Manages user login, signup, and JWT issuance")
+    Component(doc_controller, "Document Controller", "Express Route Handler", "Handles multipart file uploads and scan job dispatch")
+    Component(sse_controller, "SSE Stream Controller", "Express Route Handler", "Streams real-time agent execution progress to the browser")
+    Component(auth_middleware, "JWT & RBAC Middleware", "Zod + Jose", "Validates JWT signatures, tenant boundaries, and roles")
+    Component(doc_service, "Document Ingestion Use Case", "Application Service", "Validates PDF magic bytes, calculates SHA-256, enqueues BullMQ job")
+    Component(user_repo, "User Repository", "Mongoose Adapter", "Queries and updates MongoDB users collection")
+    Component(doc_repo, "Document Repository", "Mongoose Adapter", "Queries and updates MongoDB documents and reports collections")
+    Component(queue_adapter, "Queue Publisher", "BullMQ Client", "Enqueues scan tasks to Redis broker")
+}
+
+Container_Boundary(ai_boundary, "Python FastAPI AI Engine") {
+    Component(worker_consumer, "Queue Worker / API Router", "FastAPI / Celery-BullMQ", "Consumes document processing jobs and dispatches agent state")
+    Component(pdf_extractor, "PDF Layout Parser", "pdfplumber & PyPDF", "Extracts structured text, headers, and bounding boxes")
+    Component(chunker, "Recursive Semantic Chunker", "LangChain TextSplitter", "Splits text into 500-token chunks with 50-token overlap")
+    Component(embedding_engine, "Embedding Inference Engine", "SentenceTransformers all-MiniLM-L6-v2", "Computes 384-dim dense vector embeddings")
+    Component(langgraph_orchestrator, "LangGraph State Machine", "LangGraph Runtime", "Executes multi-agent DAG (Planner, Retriever, Plagiarism, Grammar, Citation, Synthesis)")
+    Component(chroma_adapter, "Vector Repository", "ChromaDB Client", "Executes tenant-filtered k-NN cosine similarity queries")
+}
+
+ContainerDb(mongo_db, "MongoDB 7.0", "Database", "Users, Documents, Reports")
+ContainerDb(redis_queue, "Redis 7.2", "Cache / Queue", "Task Queue and Pub/Sub")
+ContainerDb(chroma_db, "ChromaDB", "Vector Database", "Academic Chunks")
+
+Rel(doc_controller, auth_middleware, "Guarded by")
+Rel(doc_controller, doc_service, "Invokes")
+Rel(doc_service, queue_adapter, "Enqueues scan job")
+Rel(doc_service, doc_repo, "Persists document metadata")
+Rel(queue_adapter, redis_queue, "Pushes jobs")
+Rel(doc_repo, mongo_db, "Reads/Writes")
+Rel(user_repo, mongo_db, "Reads/Writes")
+Rel(sse_controller, redis_queue, "Subscribes to job progress channel")
+
+Rel(worker_consumer, redis_queue, "Pulls jobs")
+Rel(worker_consumer, pdf_extractor, "Extracts raw text")
+Rel(pdf_extractor, chunker, "Passes sections")
+Rel(chunker, embedding_engine, "Passes token batches")
+Rel(embedding_engine, chroma_adapter, "Saves embeddings")
+Rel(worker_consumer, langgraph_orchestrator, "Executes multi-agent workflow")
+Rel(langgraph_orchestrator, chroma_adapter, "Queries semantic matches")
+Rel(chroma_adapter, chroma_db, "Executes vector search")
+Rel(langgraph_orchestrator, redis_queue, "Publishes stage progress events")
+
+@enduml
