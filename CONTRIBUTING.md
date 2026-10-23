@@ -18,7 +18,30 @@ To avoid the _"works on my machine"_ problem, runtime versions are pinned at the
 
 ---
 
-## 2. Quickstart: 5-Minute Automated Bootstrapping
+## 2. Recommended: One-Command Docker Bootstrapping
+
+The fastest way to launch the complete enterprise ecosystem is using Docker Compose:
+
+```bash
+# 1. Copy the environment configuration
+cp .env.example .env
+
+# 2. Start the full stack with live hot-reloading
+make up
+# or: docker compose up -d
+
+# 3. View running services
+make ps
+```
+
+- **Frontend Dashboard**: `http://localhost:5173`
+- **Express API Gateway**: `http://localhost:5000` (Health: `http://localhost:5000/api/v1/health`)
+- **FastAPI AI Microservice**: `http://localhost:8000` (Docs: `http://localhost:8000/docs`)
+- **MongoDB**: `localhost:27017`
+
+---
+
+## 3. Alternative: Local Native Bootstrapping
 
 We provide automated bootstrapping scripts that verify runtimes, install dependencies, configure Git hooks, and prepare your `.env` file:
 

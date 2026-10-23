@@ -70,7 +70,40 @@ The ecosystem adheres to a **BFF (Backend-For-Frontend) and Microservices Hybrid
 
 ---
 
-## 5. Architectural Documentation Index (Phase 00)
+## 5. Docker Development Environment (Recommended)
+
+The entire polyglot ecosystem is orchestrated via Docker Compose, eliminating manual runtime installations across developer machines:
+
+```bash
+# 1. Clone the repository and configure environment variables
+cp .env.example .env
+
+# 2. Boot the full containerized ecosystem in the background
+make up
+# or: docker compose up -d
+```
+
+### Exposed Service Endpoints
+
+| Service                 | Container Name         | Local Host URL          | Internal Docker DNS       |
+| :---------------------- | :--------------------- | :---------------------- | :------------------------ |
+| **React Webapp**        | `academic_webapp`      | `http://localhost:5173` | `http://webapp:5173`      |
+| **Express API Gateway** | `academic_api_gateway` | `http://localhost:5000` | `http://api-gateway:5000` |
+| **FastAPI AI Engine**   | `academic_ai_engine`   | `http://localhost:8000` | `http://ai-engine:8000`   |
+| **MongoDB Datastore**   | `academic_mongo`       | `localhost:27017`       | `mongodb://mongo:27017`   |
+
+### Key Developer Commands
+
+- `make up`: Start all services with live volume mounting.
+- `make down`: Stop all running containers.
+- `make rebuild`: Rebuild images and restart containers.
+- `make logs`: Stream logs across all microservices.
+- `make logs-api`: Stream API Gateway logs.
+- `make logs-ai`: Stream FastAPI logs.
+
+---
+
+## 6. Architectural Documentation Index (Phase 00)
 
 Comprehensive blueprints and specifications are documented within the [`docs/`](./docs) directory:
 
