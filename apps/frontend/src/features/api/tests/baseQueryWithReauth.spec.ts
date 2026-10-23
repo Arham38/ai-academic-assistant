@@ -40,7 +40,9 @@ describe('baseQueryWithReauth interceptor', () => {
       data: { status: 'success', data: { message: 'hello' } },
     });
 
-    const baseQuery = createBaseQueryWithReauth(mockCustomBaseQuery);
+    const baseQuery = createBaseQueryWithReauth(
+      mockCustomBaseQuery as unknown as Parameters<typeof createBaseQueryWithReauth>[0],
+    );
     const result = await baseQuery('/documents', mockApi, {});
 
     expect(mockCustomBaseQuery).toHaveBeenCalledWith('/documents', mockApi, {});
@@ -69,7 +71,9 @@ describe('baseQueryWithReauth interceptor', () => {
         data: { status: 'success', data: { message: 'recovered data' } },
       });
 
-    const baseQuery = createBaseQueryWithReauth(mockCustomBaseQuery);
+    const baseQuery = createBaseQueryWithReauth(
+      mockCustomBaseQuery as unknown as Parameters<typeof createBaseQueryWithReauth>[0],
+    );
     const result = await baseQuery('/documents', mockApi, {});
 
     expect(mockCustomBaseQuery).toHaveBeenCalledTimes(3);
@@ -105,7 +109,9 @@ describe('baseQueryWithReauth interceptor', () => {
         error: { status: 401, data: { detail: 'Invalid refresh token' } },
       });
 
-    const baseQuery = createBaseQueryWithReauth(mockCustomBaseQuery);
+    const baseQuery = createBaseQueryWithReauth(
+      mockCustomBaseQuery as unknown as Parameters<typeof createBaseQueryWithReauth>[0],
+    );
     const result = await baseQuery('/documents', mockApi, {});
 
     expect(mockCustomBaseQuery).toHaveBeenCalledTimes(2);
@@ -122,7 +128,9 @@ describe('baseQueryWithReauth interceptor', () => {
       error: { status: 401, data: { detail: 'Invalid credentials' } },
     });
 
-    const baseQuery = createBaseQueryWithReauth(mockCustomBaseQuery);
+    const baseQuery = createBaseQueryWithReauth(
+      mockCustomBaseQuery as unknown as Parameters<typeof createBaseQueryWithReauth>[0],
+    );
     const result = await baseQuery({ url: '/auth/login', method: 'POST' }, mockApi, {});
 
     expect(mockCustomBaseQuery).toHaveBeenCalledTimes(1);
