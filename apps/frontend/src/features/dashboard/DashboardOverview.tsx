@@ -16,6 +16,7 @@ import { MetricCard } from './components/MetricCard';
 import { RecentDocumentsTable, RecentDocumentItem } from './components/RecentDocumentsTable';
 import { QuickActions } from './components/QuickActions';
 import { DashboardSkeleton } from './components/DashboardSkeleton';
+import { useGetDashboardSummaryQuery } from './dashboardApiSlice';
 
 export interface DashboardOverviewProps {
   isLoading?: boolean;
@@ -73,19 +74,25 @@ const DEFAULT_DOCUMENTS: RecentDocumentItem[] = [
 ];
 
 export const DashboardOverview: React.FC<DashboardOverviewProps> = ({
-  isLoading = false,
-  documents = DEFAULT_DOCUMENTS,
-  metrics = {
-    documentsScanned: 18,
-    averagePlagiarism: 3.4,
-    tokensRemaining: 48500,
-    totalUsers: 1420,
-    systemHealth: '99.98%',
-  },
+  isLoading: propIsLoading,
+  documents: propDocuments,
+  metrics: propMetrics,
   onUploadClick,
 }) => {
   const { user, role, isAdmin, isResearcher } = useAuth();
   const navigate = useNavigate();
+  const { data, isLoading: queryLoading } = useGetDashboardSummaryQuery();
+
+  const isLoading = propIsLoading !== undefined ? propIsLoading : queryLoading;
+  const documents = propDocuments ?? data?.recentDocuments ?? DEFAULT_DOCUMENTS;
+  const metrics = propMetrics ??
+    data?.metrics ?? {
+      documentsScanned: 18,
+      averagePlagiarism: 3.4,
+      tokensRemaining: 48500,
+      totalUsers: 1420,
+      systemHealth: '99.98%',
+    };
 
   if (isLoading) {
     return <DashboardSkeleton />;
