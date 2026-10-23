@@ -1,0 +1,109 @@
+version: '3.8'
+
+services:
+  # 1. Primary Relational/Document Datastore
+  mongo:
+    image: mongo:7.0-jammy
+    container_name: academic_mongo
+    restart: unless-stopped
+    ports:
+      - '27017:27017'
+    volumes:
+      - mongo_data:/data/db
+    networks:
+      - academic_net
+    healthcheck:
+      test: ['CMD', 'mongosh', '--eval', "db.adminCommand('ping')"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+      start_period: 5s
+
+  # 2. Python FastAPI & LangGraph AI Microservice
+  ai-engine:
+    build:
+      context: .
+      dockerfile: apps/ai-service/Dockerfile.dev
+    container_name: academic_ai_engine
+    restart: unless-stopped
+    ports:
+      - '8000:8000'
+    shm_size: '2gb'
+    volumes:
+      # Live code mounting for instant Uvicorn hot-reload
+      - ./apps/ai-service/src:/app/apps/ai-service/src
+      # Model cache volumes prevent re-downloading HuggingFace/PyTorch weights across builds
+      - huggingface_cache:/root/.cache/huggingface
+      - torch_cache:/root/.cache/torch
+    environment:
+      - FASTAPI_HOST=0.0.0.0
+      - FASTAPI_PORT=8000
+      - EMBEDDING_MODEL_NAME=sentence-transformers/all-MiniLM-L6-v2
+    networks:
+      - academic_net
+
+  # 3. Node.js Express API Gateway (BFF)
+  api-gateway:
+    build:
+      context: .
+      dockerfile: apps/backend/Dockerfile.dev
+    container_name: academic_api_gateway
+    restart: unless-stopped
+    ports:
+      - '5000:5000'
+    volumes:
+      # Live code mounting for tsx watcher
+      - ./apps/backend/src:/app/apps/backend/src
+      # Anonymous volumes shield container Linux binaries from host-OS node_modules
+      - /app/node_modules
+      - /app/apps/backend/node_modules
+    environment:
+      - NODE_ENV=development
+      - PORT=5000
+      - CLIENT_ORIGIN=http://localhost:5173
+      - MONGODB_URI=mongodb://mongo:27017/ai-academic-assistance
+      - INTERNAL_FASTAPI_URL=http://ai-engine:8000
+      - JWT_SECRET=dev_jwt_secret_key_change_in_prod
+      - INTERNAL_SERVICE_SECRET=dev_internal_mesh_key_change_in_prod
+    depends_on:
+      mongo:
+        condition: service_healthy
+      ai-engine:
+        condition: service_started
+    networks:
+      - academic_net
+
+  # 4. React Vite Client Web Application
+  webapp:
+    build:
+      context: .
+      dockerfile: apps/frontend/Dockerfile.dev
+    container_name: academic_webapp
+    restart: unless-stopped
+    ports:
+      - '5173:5173'
+    volumes:
+      # Live code mounting for Vite HMR
+      - ./apps/frontend/src:/app/apps/frontend/src
+      # Anonymous volumes shield container node_modules
+      - /app/node_modules
+      - /app/apps/frontend/node_modules
+    environment:
+      - VITE_API_URL=http://localhost:5000/api/v1
+    depends_on:
+      - api-gateway
+    networks:
+      - academic_net
+
+networks:
+  academic_net:
+    name: academic_net
+    driver: bridge
+
+volumes:
+  mongo_data:
+    name: academic_mongo_data
+  huggingface_cache:
+    name: academic_huggingface_cache
+  torch_cache:
+    name: academic_torch_cache
