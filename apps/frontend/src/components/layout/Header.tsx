@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { Menu, Activity, GraduationCap } from 'lucide-react';
 import { Breadcrumbs } from './Breadcrumbs';
 import { UserDropdown } from './UserDropdown';
+import { ThemeToggle } from '../ui/theme-toggle';
 
 export interface HeaderProps {
   onToggleMobileMenu: () => void;
@@ -50,6 +51,9 @@ export const Header: React.FC<HeaderProps> = ({ onToggleMobileMenu, dynamicTitle
             <Activity className="w-3.5 h-3.5 text-slate-400 ml-1" />
             <span>AI Gateway Connected</span>
           </div>
+
+          {/* Theme Selector Toggle */}
+          <ThemeToggle />
 
           {/* User Profile Dropdown */}
           <UserDropdown />
