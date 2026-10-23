@@ -44,6 +44,9 @@ export const App: React.FC = () => {
                 <Link to="/dashboard" className="hover:text-indigo-600 transition-colors">
                   Dashboard
                 </Link>
+                <Link to="/settings" className="hover:text-indigo-600 transition-colors">
+                  Settings
+                </Link>
                 {isAdmin && (
                   <Link
                     to="/admin"

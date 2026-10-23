@@ -4,6 +4,7 @@ import { LoginPage } from '../pages/auth/LoginPage';
 import { RegisterPage } from '../pages/auth/RegisterPage';
 import { UnauthorizedPage } from '../pages/auth/UnauthorizedPage';
 import { DashboardPage } from '../pages/dashboard/DashboardPage';
+import { SettingsPage } from '../pages/settings/SettingsPage';
 import { AdminPage } from '../pages/admin/AdminPage';
 import { NotFoundPage } from '../pages/NotFoundPage';
 import { RequireAuth } from '../features/auth/components/RequireAuth';
@@ -48,6 +49,10 @@ export const router = createBrowserRouter([
               {
                 path: 'dashboard',
                 element: <DashboardPage />,
+              },
+              {
+                path: 'settings',
+                element: <SettingsPage />,
               },
               // Restricted RBAC sub-tree
               {

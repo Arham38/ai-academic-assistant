@@ -69,10 +69,18 @@ export const DashboardPage: React.FC = () => {
               to="/admin"
               className="inline-flex items-center px-4 py-2 border border-slate-300 rounded-lg text-sm font-medium text-slate-700 bg-white hover:bg-slate-50 transition-colors shadow-xs"
             >
-              <Settings className="w-4 h-4 mr-2 text-slate-500" />
+              <Shield className="w-4 h-4 mr-2 text-purple-600" />
               Admin Portal
             </Link>
           )}
+
+          <Link
+            to="/settings"
+            className="inline-flex items-center px-4 py-2 border border-slate-300 rounded-lg text-sm font-medium text-slate-700 bg-white hover:bg-slate-50 transition-colors shadow-xs"
+          >
+            <Settings className="w-4 h-4 mr-2 text-slate-500" />
+            Settings
+          </Link>
 
           <button
             onClick={handleLogout}
