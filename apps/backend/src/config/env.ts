@@ -15,7 +15,13 @@ const envSchema = z.object({
     .string()
     .min(8, 'INTERNAL_SERVICE_SECRET must be at least 8 characters long')
     .default('dev_internal_mesh_key_change_in_prod'),
-  MONGODB_URI: z.string().default('mongodb://localhost:27017/academic_assistant'),
+  MONGODB_URI: z
+    .string()
+    .regex(
+      /^(mongodb|mongodb\+srv):\/\//,
+      'MONGODB_URI must be a valid MongoDB connection string (mongodb:// or mongodb+srv://)',
+    )
+    .default('mongodb://localhost:27017/ai-academic-assistance'),
   REDIS_HOST: z.string().default('localhost'),
   REDIS_PORT: z.coerce.number().default(6379),
   INTERNAL_FASTAPI_URL: z.string().url().default('http://localhost:8000'),
