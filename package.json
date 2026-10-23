@@ -1,0 +1,38 @@
+{
+  "name": "ai-academic-assistant",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Enterprise-grade AI Academic Assistant platform for semantic plagiarism detection, citation validation, and agentic RAG",
+  "author": "Academic AI Engineering Team <dev@institution.edu>",
+  "license": "MIT",
+  "scripts": {
+    "lint:ts": "eslint . --ext .ts,.tsx,.js,.jsx",
+    "lint:ts:fix": "eslint . --ext .ts,.tsx,.js,.jsx --fix",
+    "lint:py": "python -m ruff check .",
+    "lint:py:fix": "python -m ruff check . --fix",
+    "lint": "npm run lint:ts && npm run lint:py",
+    "format:check": "prettier --check .",
+    "format": "prettier --write .",
+    "format:py": "python -m ruff format .",
+    "typecheck:ts": "tsc --noEmit",
+    "typecheck:py": "python -m mypy .",
+    "check:all": "npm run lint && npm run format:check && npm run typecheck:ts && npm run typecheck:py",
+    "prepare": "husky install"
+  },
+  "devDependencies": {
+    "@typescript-eslint/eslint-plugin": "^7.18.0",
+    "@typescript-eslint/parser": "^7.18.0",
+    "eslint": "^8.57.0",
+    "eslint-config-prettier": "^9.1.0",
+    "eslint-plugin-react": "^7.34.3",
+    "eslint-plugin-react-hooks": "^4.6.2",
+    "husky": "^8.0.3",
+    "lint-staged": "^15.2.7",
+    "prettier": "^3.3.2",
+    "typescript": "^5.5.2"
+  },
+  "engines": {
+    "node": ">=20.0.0",
+    "npm": ">=10.0.0"
+  }
+}
