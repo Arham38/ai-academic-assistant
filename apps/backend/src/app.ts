@@ -2,6 +2,7 @@ import express, { Application, Request, Response, NextFunction } from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
 import hpp from 'hpp';
+import cookieParser from 'cookie-parser';
 import { env } from './config/env';
 import { v1Router } from './presentation/routes';
 import { errorHandler } from './presentation/middleware/errorHandler';
@@ -21,7 +22,8 @@ app.use(
 );
 app.use(hpp());
 
-// 2. Body Parsing Middleware
+// 2. Body Parsing & Cookie Middleware
+app.use(cookieParser());
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
