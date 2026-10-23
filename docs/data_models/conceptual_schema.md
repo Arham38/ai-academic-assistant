@@ -11,10 +11,12 @@
 ## 1. Architectural Strategy
 
 The persistence architecture employs a **Polyglot Storage Pattern**:
+
 1. **MongoDB (Transactional / Document Store)**: Optimized for structured and semi-structured operational records, relational joins via surrogate keys, transactional integrity, and atomic status updates.
 2. **ChromaDB (Vector Datastore)**: Optimized for indexing and querying high-dimensional dense vector embeddings ($384$ dimensions) via Approximate Nearest Neighbor (ANN) search.
 
 ### 1.1 Cross-Store Key Linkage (Surrogate Keys)
+
 ```
 [ MongoDB: 'documents' ]               [ ChromaDB: 'academic_chunks' ]
   _id: "doc_67a12b3c"  ◄───────┐         id: "chk_998877"
@@ -29,6 +31,7 @@ The persistence architecture employs a **Polyglot Storage Pattern**:
 ## 2. MongoDB Collections Schema Design
 
 ### 2.1 `users` Collection
+
 Stores identity credentials, institutional tenant assignments, roles, and resource consumption quotas.
 
 ```typescript
@@ -57,13 +60,16 @@ interface UserDocument {
   updatedAt: Date;
 }
 ```
+
 **Indexes**:
+
 - Unique compound: `{ tenantId: 1, email: 1 }`
 - Lookup: `{ tenantId: 1, role: 1 }`
 
 ---
 
 ### 2.2 `documents` Collection
+
 Stores uploaded file metadata, cryptographic integrity hashes, parsing status, and storage references.
 
 ```typescript
@@ -85,7 +91,9 @@ interface DocumentRecord {
   updatedAt: Date;
 }
 ```
+
 **Indexes**:
+
 - Sharding / Compound Key: `{ tenantId: 1, _id: 1 }`
 - Fast User History: `{ tenantId: 1, userId: 1, createdAt: -1 }`
 - Duplicate Prevention: `{ tenantId: 1, sha256Hash: 1 }`
@@ -94,6 +102,7 @@ interface DocumentRecord {
 ---
 
 ### 2.3 `reports` Collection
+
 Stores immutable analysis artifacts output by the LangGraph multi-agent engine.
 
 ```typescript
@@ -104,7 +113,7 @@ interface AnalysisReport {
   userId: string;
   summary: {
     overallIntegrityScore: number; // 0.0 - 100.0 (Higher = cleaner academic rigor)
-    plagiarismPercentage: number;  // 0.0 - 100.0
+    plagiarismPercentage: number; // 0.0 - 100.0
     grammarErrorCount: number;
     citationIssueCount: number;
     executiveSummary: string;
@@ -155,13 +164,16 @@ interface AnalysisReport {
   generatedAt: Date;
 }
 ```
+
 **Indexes**:
+
 - Lookup by Document: `{ documentId: 1 }` (Unique)
 - Compound Query: `{ tenantId: 1, generatedAt: -1 }`
 
 ---
 
 ### 2.4 `audit_logs` Collection
+
 Immutable append-only records tracking sensitive actions for compliance (FERPA, GDPR).
 
 ```typescript
@@ -169,7 +181,12 @@ interface AuditLogEntry {
   _id: string;
   tenantId: string;
   userId: string;
-  action: 'DOCUMENT_UPLOAD' | 'DOCUMENT_SCAN_STARTED' | 'REPORT_ACCESSED' | 'REPORT_EXPORTED' | 'DOCUMENT_DELETED';
+  action:
+    | 'DOCUMENT_UPLOAD'
+    | 'DOCUMENT_SCAN_STARTED'
+    | 'REPORT_ACCESSED'
+    | 'REPORT_EXPORTED'
+    | 'DOCUMENT_DELETED';
   resourceId: string; // e.g., docId or reportId
   ipAddress: string;
   userAgent: string;
@@ -177,7 +194,9 @@ interface AuditLogEntry {
   timestamp: Date;
 }
 ```
+
 **Indexes**:
+
 - Search by Tenant & Date: `{ tenantId: 1, timestamp: -1 }`
 - User Action Tracking: `{ tenantId: 1, userId: 1, timestamp: -1 }`
 
@@ -186,20 +205,21 @@ interface AuditLogEntry {
 ## 3. ChromaDB Vector Collection Schema
 
 ### 3.1 Collection Name: `academic_chunks`
+
 Vector search collections in ChromaDB store dense numerical embeddings alongside structured metadata dictionaries for pre-filtering.
 
-| Field | Type | Description |
-| :--- | :--- | :--- |
-| **`id`** | `String` (PK) | Unique chunk ID (e.g., `chk_${docId}_p${page}_${idx}`) |
-| **`embedding`** | `Array<Float>` | 384-dimensional dense float vector (`all-MiniLM-L6-v2`) |
-| **`document`** | `String` | Raw text content of the 500-token chunk |
-| **`metadata.tenant_id`** | `String` | Mandatory tenant partition key for multi-tenancy |
-| **`metadata.doc_id`** | `String` | Foreign surrogate key referencing MongoDB `documents._id` |
-| **`metadata.user_id`** | `String` | Uploader ID |
-| **`metadata.page_number`** | `Integer` | Physical page in PDF document (1-indexed) |
-| **`metadata.paragraph_index`** | `Integer` | Paragraph offset within page |
-| **`metadata.section_name`** | `String` | Extracted header (e.g., "Methodology", "Abstract") |
-| **`metadata.token_length`** | `Integer` | Number of tokens in chunk |
+| Field                          | Type           | Description                                               |
+| :----------------------------- | :------------- | :-------------------------------------------------------- |
+| **`id`**                       | `String` (PK)  | Unique chunk ID (e.g., `chk_${docId}_p${page}_${idx}`)    |
+| **`embedding`**                | `Array<Float>` | 384-dimensional dense float vector (`all-MiniLM-L6-v2`)   |
+| **`document`**                 | `String`       | Raw text content of the 500-token chunk                   |
+| **`metadata.tenant_id`**       | `String`       | Mandatory tenant partition key for multi-tenancy          |
+| **`metadata.doc_id`**          | `String`       | Foreign surrogate key referencing MongoDB `documents._id` |
+| **`metadata.user_id`**         | `String`       | Uploader ID                                               |
+| **`metadata.page_number`**     | `Integer`      | Physical page in PDF document (1-indexed)                 |
+| **`metadata.paragraph_index`** | `Integer`      | Paragraph offset within page                              |
+| **`metadata.section_name`**    | `String`       | Extracted header (e.g., "Methodology", "Abstract")        |
+| **`metadata.token_length`**    | `Integer`      | Number of tokens in chunk                                 |
 
 ---
 

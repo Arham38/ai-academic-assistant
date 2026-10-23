@@ -1,12 +1,13 @@
 # Architectural Diagrams Reference
 
-This directory contains the visual blueprints for the **AI Academic Assistant** platform. 
+This directory contains the visual blueprints for the **AI Academic Assistant** platform.
 
 The primary source files are written in **PlantUML** (`.puml`) for C4 Model validation and CI/CD diagram generation. Below, interactive **Mermaid.js** diagrams are provided for immediate rendering in GitHub, IDEs, and browser markdown viewers.
 
 ---
 
 ## 1. System Context Diagram (C4 Level 1)
+
 Source: [`c4_context.puml`](./c4_context.puml)
 
 ```mermaid
@@ -39,6 +40,7 @@ flowchart TD
 ---
 
 ## 2. Container Diagram (C4 Level 2)
+
 Source: [`c4_container.puml`](./c4_container.puml)
 
 ```mermaid
@@ -71,6 +73,7 @@ flowchart TD
 ---
 
 ## 3. Component Diagram (C4 Level 3)
+
 Source: [`c4_component.puml`](./c4_component.puml)
 
 ```mermaid
@@ -110,6 +113,7 @@ flowchart LR
 ---
 
 ## 4. Sequence Diagram: Document Plagiarism Scan Workflow
+
 Source: [`sequence_plagiarism_scan.puml`](./sequence_plagiarism_scan.puml)
 
 ```mermaid
@@ -160,6 +164,7 @@ sequenceDiagram
 ---
 
 ## 5. Sequence Diagram: Conversational Agentic RAG Workflow
+
 Source: [`sequence_agentic_rag.puml`](./sequence_agentic_rag.puml)
 
 ```mermaid

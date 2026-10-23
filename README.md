@@ -1,13 +1,13 @@
 # ai-academic-assistant
 
 > **Enterprise-Grade AI Academic Assistant Platform**  
-> *Semantic Plagiarism Detection, Multi-Agent Retrieval-Augmented Generation (RAG), Automated Citation Integrity Auditing, and Academic Style Analysis.*
+> _Semantic Plagiarism Detection, Multi-Agent Retrieval-Augmented Generation (RAG), Automated Citation Integrity Auditing, and Academic Style Analysis._
 
 ---
 
 ## 1. Project Overview
 
-The **AI Academic Assistant** is an enterprise-scale educational technology and academic verification ecosystem designed for universities, institutional research labs, and academic authors. 
+The **AI Academic Assistant** is an enterprise-scale educational technology and academic verification ecosystem designed for universities, institutional research labs, and academic authors.
 
 Traditional plagiarism checkers rely on superficial n-gram string matching that fails to detect paraphrased ideas, structural restructuring, and semantic rewrites. This platform leverages **Dense Semantic Embeddings** (`sentence-transformers/all-MiniLM-L6-v2`), **Vector Similarity Search** (ChromaDB), and **Cyclical Multi-Agent Orchestration** (LangGraph) to deliver deep integrity auditing without high SaaS API costs or data privacy compromises.
 
@@ -38,7 +38,7 @@ The ecosystem adheres to a **BFF (Backend-For-Frontend) and Microservices Hybrid
                    │
                    │ HTTPS / WSS / SSE
                    ▼
-    [ Node.js Express Gateway (BFF) ] 
+    [ Node.js Express Gateway (BFF) ]
        │ Port 5000: Auth, Validation, Redis Producer, MongoDB Manager
        │
        ├─────────────────────────────────┐
@@ -57,16 +57,16 @@ The ecosystem adheres to a **BFF (Backend-For-Frontend) and Microservices Hybrid
 
 ## 4. Technology Stack Summary
 
-| Tier | Technologies |
-| :--- | :--- |
-| **Frontend** | React 18, Vite, TypeScript, Tailwind CSS, Redux Toolkit, RTK Query, Lucide Icons, KaTeX |
-| **Gateway (BFF)** | Node.js (v20 LTS), Express.js, TypeScript, Zod, Mongoose, BullMQ, Jose (JWT) |
-| **AI Microservice** | Python 3.11+, FastAPI, Uvicorn, LangGraph, LangChain-Core, PyTorch, SentenceTransformers |
-| **Embedding Model** | `sentence-transformers/all-MiniLM-L6-v2` (384-dimensional dense vectors) |
-| **Datastores** | MongoDB 7.0 (Primary Operational), ChromaDB 0.5+ (Vector Database) |
-| **Task Broker & Cache**| Redis 7.2 (Distributed task queue and SSE Pub/Sub) |
-| **Document Processing**| `pdfplumber`, `PyPDF`, LangChain RecursiveCharacterTextSplitter |
-| **DevOps & Containers**| Docker, Docker Compose |
+| Tier                    | Technologies                                                                             |
+| :---------------------- | :--------------------------------------------------------------------------------------- |
+| **Frontend**            | React 18, Vite, TypeScript, Tailwind CSS, Redux Toolkit, RTK Query, Lucide Icons, KaTeX  |
+| **Gateway (BFF)**       | Node.js (v20 LTS), Express.js, TypeScript, Zod, Mongoose, BullMQ, Jose (JWT)             |
+| **AI Microservice**     | Python 3.11+, FastAPI, Uvicorn, LangGraph, LangChain-Core, PyTorch, SentenceTransformers |
+| **Embedding Model**     | `sentence-transformers/all-MiniLM-L6-v2` (384-dimensional dense vectors)                 |
+| **Datastores**          | MongoDB 7.0 (Primary Operational), ChromaDB 0.5+ (Vector Database)                       |
+| **Task Broker & Cache** | Redis 7.2 (Distributed task queue and SSE Pub/Sub)                                       |
+| **Document Processing** | `pdfplumber`, `PyPDF`, LangChain RecursiveCharacterTextSplitter                          |
+| **DevOps & Containers** | Docker, Docker Compose                                                                   |
 
 ---
 

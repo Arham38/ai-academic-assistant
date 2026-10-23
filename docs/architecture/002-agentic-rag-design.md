@@ -11,6 +11,7 @@
 ## 1. Architectural Philosophy
 
 Standard naive Retrieval-Augmented Generation (RAG)—consisting of a linear pipeline of `Query -> Embed -> Vector Top-K -> LLM Generation`—consistently fails in academic contexts. Academic documents exhibit dense technical jargon, complex inter-sentence dependency structures, mathematical formulations, and strict citation formatting requirements. Linear RAG pipelines suffer from:
+
 1. **Context Fragmentation**: Splitting text into arbitrary chunk sizes destroys semantic context across section boundaries.
 2. **Hallucination in Citations**: LLMs generate plausible but non-existent academic references ("ghost citations").
 3. **Inability to Self-Correct**: Without a cyclical feedback mechanism, false positives in plagiarism detection or style critiques cannot be re-evaluated.
@@ -152,29 +153,29 @@ class AcademicAgentState(TypedDict):
     tenant_id: str
     user_id: str
     session_id: str
-    
+
     # Document Payloads
     raw_text: str
     metadata: Dict[str, Any]
     chunks: List[Dict[str, Any]]
-    
+
     # Execution Routing State
     execution_plan: List[str]
     active_agent: str
     iteration_count: int
     max_iterations: int
-    
+
     # Agent Analysis Artifacts
     retrieved_contexts: List[Dict[str, Any]]
     plagiarism_matches: List[PlagiarismMatch]
     grammar_issues: List[GrammarIssue]
     citation_issues: List[CitationIssue]
-    
+
     # Synthesis & Results
     aggregate_score: float
     executive_summary: str
     structured_report: Dict[str, Any]
-    
+
     # Error Handling & Telemetry
     errors: List[str]
     is_completed: bool
@@ -203,6 +204,7 @@ Document Text
 ```
 
 ### 4.1 Token Budget Specifications
+
 - **Chunk Size**: `500 tokens` (approximately 2,000 characters). This fits comfortably within the 512-token context window of `sentence-transformers/all-MiniLM-L6-v2` without truncation.
 - **Overlap**: `50 tokens` (10% sliding window). Ensures that sentences spanning chunk boundaries retain full semantic coherence.
 - **Metadata Enriched Indexing**: Each chunk injected into ChromaDB contains:
@@ -225,6 +227,7 @@ Document Text
 ## 5. Termination Guards & Anti-Hallucination Controls
 
 To guarantee that autonomous multi-agent loops never enter infinite self-critique cycles or trigger unbounded LLM spending:
+
 1. **Deterministic Iteration Limits**: The graph state enforces `max_iterations = 3`. If the Synthesis Agent fails its self-consistency check on the 3rd iteration, the loop terminates immediately, logs a warning, and outputs the highest-scoring intermediate report.
 2. **Temperature Control**:
    - Planner Agent: `temperature = 0.0` (strict deterministic routing).

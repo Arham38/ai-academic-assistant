@@ -80,23 +80,27 @@ Both the Node.js API Gateway and the Python FastAPI Microservice are organized i
 ### 2.1 Layer Responsibilities
 
 #### Layer 4: Domain Entities (Core)
+
 - Pure enterprise data structures and validation invariants.
 - **Node.js**: TypeScript classes / pure types (e.g., `User`, `DocumentMetadata`).
 - **Python**: Pydantic / dataclass domain objects (e.g., `PlagiarismMatch`, `Chunk`).
 - Zero external dependencies.
 
 #### Layer 3: Application Use Cases
+
 - Contains application-specific business workflows.
 - Implements use cases: `UploadDocumentUseCase`, `RunPlagiarismScanUseCase`, `StreamAgentAnalysisUseCase`.
 - Communicates solely through abstract repository and service interfaces.
 
 #### Layer 2: Interface Adapters
+
 - Translates data between use cases and external representations.
 - **Controllers**: Express route handlers, FastAPI endpoint routers.
 - **Repositories**: Concrete implementations of domain repository interfaces (e.g., `MongoDocumentRepository`, `ChromaVectorRepository`).
 - **Serializers / Presenters**: DTOs, JSON converters, SSE formatters.
 
 #### Layer 1: Frameworks & Drivers (Outer Ring)
+
 - Concrete infrastructure details: Express server instance, FastAPI ASGI app, Mongoose connection pool, ChromaDB client, Redis connection.
 - Code in this ring can be swapped without touching a single line of business logic in layers 3 or 4.
 
@@ -105,6 +109,7 @@ Both the Node.js API Gateway and the Python FastAPI Microservice are organized i
 ## 3. Communication Strategy: Synchronous vs. Asynchronous
 
 Enterprise AI workloads have wildly divergent latency characteristics:
+
 - User authentication and profile queries execute in `< 30ms`.
 - Interactive conversational RAG queries execute in `1.5s - 3s`.
 - 50-page PDF semantic scans and multi-agent cross-referencing require `15s - 60s`.
@@ -113,12 +118,12 @@ Attempting to process full academic documents over a blocking synchronous HTTP r
 
 ### 3.1 Tiered Transport Architecture
 
-| Operation Type | Transport Protocol | Path / Mechanism | Latency SLA | Error Handling |
-| :--- | :--- | :--- | :--- | :--- |
-| **Authentication & Metadata** | Synchronous REST (HTTP/2) | `POST /api/v1/auth/login`<br>`GET /api/v1/documents` | `< 150ms` | Immediate HTTP error response (4xx/5xx). |
-| **Conversational RAG Chat** | Server-Sent Events (SSE) | `GET /api/v1/chat/stream?query=...` | First token `< 1.2s` | Streamed JSON error frame; graceful client retry. |
-| **Full PDF Document Scan** | Asynchronous Queue + SSE | `POST /api/v1/documents/scan` (Returns Job ID)<br>Progress via SSE: `/api/v1/jobs/:id/events` | Async background (`15s - 60s`) | Automatic queue retry (up to 3 times) with exponential backoff. |
-| **Gateway ➔ AI Microservice** | Internal REST + Service Auth | `POST http://fastapi-ai:8000/internal/v1/analyze` | Dedicated pool | Circuit Breaker pattern with 10s fallback threshold. |
+| Operation Type                | Transport Protocol           | Path / Mechanism                                                                              | Latency SLA                    | Error Handling                                                  |
+| :---------------------------- | :--------------------------- | :-------------------------------------------------------------------------------------------- | :----------------------------- | :-------------------------------------------------------------- |
+| **Authentication & Metadata** | Synchronous REST (HTTP/2)    | `POST /api/v1/auth/login`<br>`GET /api/v1/documents`                                          | `< 150ms`                      | Immediate HTTP error response (4xx/5xx).                        |
+| **Conversational RAG Chat**   | Server-Sent Events (SSE)     | `GET /api/v1/chat/stream?query=...`                                                           | First token `< 1.2s`           | Streamed JSON error frame; graceful client retry.               |
+| **Full PDF Document Scan**    | Asynchronous Queue + SSE     | `POST /api/v1/documents/scan` (Returns Job ID)<br>Progress via SSE: `/api/v1/jobs/:id/events` | Async background (`15s - 60s`) | Automatic queue retry (up to 3 times) with exponential backoff. |
+| **Gateway ➔ AI Microservice** | Internal REST + Service Auth | `POST http://fastapi-ai:8000/internal/v1/analyze`                                             | Dedicated pool                 | Circuit Breaker pattern with 10s fallback threshold.            |
 
 ---
 

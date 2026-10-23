@@ -15,7 +15,7 @@ The system enforces a strict distinction between **external client-facing commun
    - Synchronous transactional requests utilize **RESTful JSON over HTTP/2** (TLS 1.3).
    - Real-time AI token generation and job progress utilize **Server-Sent Events (SSE)**.
    - Authentication via Bearer JWT (`Authorization: Bearer <token>`).
-   
+
 2. **Node.js Gateway ➔ Python FastAPI Engine (Internal Mesh)**:
    - High-throughput internal REST endpoints.
    - Zero-Trust internal authorization header (`X-Internal-Service-Key`).
@@ -48,6 +48,7 @@ All HTTP errors returned by the API Gateway adhere to RFC 7807 (Problem Details 
 ## 3. Server-Sent Events (SSE) Streaming Specification
 
 ### 3.1 Job Progress Stream (`GET /api/v1/jobs/{jobId}/events`)
+
 Client connects using the browser `EventSource` API:
 
 ```
@@ -68,6 +69,7 @@ data: {"status": "SUCCESS", "reportId": "rep_67b31c9a", "documentId": "doc_8899a
 ```
 
 ### 3.2 Conversational RAG Token Stream (`POST /api/v1/chat/completions`)
+
 ```
 event: message
 data: {"token": "According", "isFinal": false}

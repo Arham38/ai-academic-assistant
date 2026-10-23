@@ -76,8 +76,8 @@ paths:
                 properties:
                   jobId: { type: string }
                   documentId: { type: string }
-                  status: { type: string, example: "QUEUED" }
-                  sseProgressUrl: { type: string, example: "/api/v1/jobs/job_123/events" }
+                  status: { type: string, example: 'QUEUED' }
+                  sseProgressUrl: { type: string, example: '/api/v1/jobs/job_123/events' }
         '400':
           description: Invalid file format (non-PDF or corrupted)
         '429':

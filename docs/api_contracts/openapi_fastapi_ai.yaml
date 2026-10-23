@@ -36,7 +36,7 @@ paths:
                 type: object
                 properties:
                   jobId: { type: string }
-                  status: { type: string, example: "PROCESSING" }
+                  status: { type: string, example: 'PROCESSING' }
 
   /agent/query:
     post:
