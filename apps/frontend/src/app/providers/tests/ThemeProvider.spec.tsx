@@ -77,9 +77,9 @@ describe('<ThemeProvider /> & useTheme Hook', () => {
     expect(document.documentElement.classList.contains('dark')).toBe(true);
   });
 
-  it('should throw an error if useTheme is called outside a ThemeProvider', () => {
-    expect(() => renderHook(() => useTheme())).toThrow(
-      'useTheme must be used within a ThemeProvider',
-    );
+  it('should return default fallback state if useTheme is called outside a ThemeProvider', () => {
+    const { result } = renderHook(() => useTheme());
+    expect(result.current.theme).toBe('system');
+    expect(result.current.resolvedTheme).toBe('light');
   });
 });

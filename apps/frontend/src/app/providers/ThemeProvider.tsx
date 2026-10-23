@@ -8,7 +8,7 @@ export interface ThemeProviderState {
   setTheme: (theme: Theme) => void;
 }
 
-const initialState: ThemeProviderState = {
+export const initialState: ThemeProviderState = {
   theme: 'system',
   resolvedTheme: 'light',
   setTheme: () => null,
@@ -68,9 +68,13 @@ export const ThemeProvider: React.FC<ThemeProviderProps> = ({
 
       if (mediaQuery.addEventListener) {
         mediaQuery.addEventListener('change', handleChange);
-        return () => mediaQuery.removeEventListener('change', handleChange);
+        return () => {
+          mediaQuery.removeEventListener('change', handleChange);
+        };
       }
     }
+
+    return undefined;
   }, [theme]);
 
   const setTheme = (newTheme: Theme) => {

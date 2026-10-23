@@ -14,7 +14,7 @@ export interface HeaderProps {
 
 export const Header: React.FC<HeaderProps> = ({ onToggleMobileMenu, dynamicTitleResolver }) => {
   return (
-    <header className="h-16 bg-white border-b border-slate-200 sticky top-0 z-30 shadow-2xs">
+    <header className="h-16 bg-card/95 backdrop-blur-xs text-card-foreground border-b border-border sticky top-0 z-30 shadow-2xs">
       <div className="h-full px-4 sm:px-6 flex items-center justify-between">
         {/* Left Side: Mobile Hamburger & Dynamic Breadcrumbs */}
         <div className="flex items-center space-x-3 sm:space-x-4 min-w-0">

@@ -15,10 +15,10 @@ export const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, onToggleCollapse,
   const visibleItems = getAuthorizedNavigation(navigationConfig, role);
 
   return (
-    <div className="flex flex-col h-full bg-white select-none">
+    <div className="flex flex-col h-full bg-card text-card-foreground select-none">
       {/* Brand Header */}
       <div
-        className={`flex items-center h-16 border-b border-slate-200 shrink-0 ${
+        className={`flex items-center h-16 border-b border-border shrink-0 ${
           isCollapsed ? 'justify-center px-2' : 'px-5'
         }`}
       >
@@ -33,10 +33,10 @@ export const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, onToggleCollapse,
           </div>
           {!isCollapsed && (
             <div className="min-w-0">
-              <span className="text-sm font-bold text-slate-900 tracking-tight block truncate">
+              <span className="text-sm font-bold text-foreground tracking-tight block truncate">
                 Academic Assistant
               </span>
-              <span className="text-[10px] text-indigo-600 font-semibold tracking-wider uppercase block">
+              <span className="text-[10px] text-indigo-600 dark:text-indigo-400 font-semibold tracking-wider uppercase block">
                 AI Integrity Suite
               </span>
             </div>

@@ -41,13 +41,13 @@ export const DashboardLayout: React.FC = () => {
 
   return (
     <div
-      className={`min-h-screen bg-slate-50 font-sans antialiased text-slate-900 transition-all duration-300 md:grid ${
+      className={`min-h-screen bg-background font-sans antialiased text-foreground transition-all duration-300 md:grid ${
         isCollapsed ? 'md:grid-cols-[80px_1fr]' : 'md:grid-cols-[260px_1fr]'
       }`}
     >
       {/* 1. Desktop Fixed/Sticky Sidebar */}
       <aside
-        className="hidden md:block h-screen sticky top-0 z-20 bg-white border-r border-slate-200 overflow-y-auto"
+        className="hidden md:block h-screen sticky top-0 z-20 bg-card border-r border-border overflow-y-auto"
         aria-label="Desktop Sidebar Navigation"
       >
         <Sidebar isCollapsed={isCollapsed} onToggleCollapse={handleToggleCollapse} />
@@ -73,7 +73,7 @@ export const DashboardLayout: React.FC = () => {
         </main>
 
         {/* Global Footer */}
-        <footer className="bg-white border-t border-slate-200 py-4 px-6 text-center text-xs text-slate-400">
+        <footer className="bg-card border-t border-border py-4 px-6 text-center text-xs text-muted-foreground">
           &copy; {new Date().getFullYear()} AI Academic Assistant Platform. Enterprise Multi-Agent
           Architecture.
         </footer>
