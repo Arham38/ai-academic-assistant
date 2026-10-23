@@ -22,6 +22,7 @@ export interface UserResponseDTO {
 
 export interface LoginUserResponseDTO {
   accessToken: string;
+  rawRefreshToken: string;
   user: {
     id: string;
     email: string;
@@ -29,4 +30,9 @@ export interface LoginUserResponseDTO {
     firstName?: string;
     lastName?: string;
   };
+}
+
+export interface RefreshSessionResponseDTO {
+  accessToken: string;
+  rawRefreshToken: string;
 }
