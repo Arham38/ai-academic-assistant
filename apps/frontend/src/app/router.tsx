@@ -6,7 +6,7 @@ import { UnauthorizedPage } from '../pages/auth/UnauthorizedPage';
 import { DashboardOverview } from '../pages/dashboard/DashboardOverview';
 import { StudentDashboardPage } from '../pages/dashboard/StudentDashboardPage';
 import { ResearcherHubPage } from '../pages/dashboard/ResearcherHubPage';
-import { DocumentsPage } from '../pages/documents/DocumentsPage';
+import { DocumentsPage, DocumentLayout, DocumentOverview, DocumentChat } from '../pages/documents';
 import { SettingsPage } from '../pages/settings/SettingsPage';
 import { AdminPage } from '../pages/admin/AdminPage';
 import { NotFoundPage } from '../pages/NotFoundPage';
@@ -91,10 +91,41 @@ export const router = createBrowserRouter([
                     ],
                   },
 
-                  // Manuscript & Plagiarism Report Library
+                  // Manuscript & Plagiarism Report Library (with nested document views)
                   {
                     path: 'documents',
-                    element: <DocumentsPage />,
+                    children: [
+                      {
+                        index: true,
+                        element: <DocumentsPage />,
+                      },
+                      {
+                        path: ':documentId',
+                        element: <DocumentLayout />,
+                        children: [
+                          {
+                            index: true,
+                            element: <Navigate to="overview" replace />,
+                          },
+                          {
+                            path: 'overview',
+                            element: <DocumentOverview />,
+                          },
+                          {
+                            path: 'chat',
+                            element: <DocumentChat />,
+                          },
+                          {
+                            path: 'report',
+                            element: <DocumentOverview />,
+                          },
+                          {
+                            path: '*',
+                            element: <Navigate to="overview" replace />,
+                          },
+                        ],
+                      },
+                    ],
                   },
 
                   // Account Profile & Security Settings
