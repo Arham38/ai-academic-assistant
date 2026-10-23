@@ -15,8 +15,10 @@ import { useAuth } from '../auth/hooks/useAuth';
 import { MetricCard } from './components/MetricCard';
 import { RecentDocumentsTable, RecentDocumentItem } from './components/RecentDocumentsTable';
 import { QuickActions } from './components/QuickActions';
+import { DashboardSkeleton } from './components/DashboardSkeleton';
 
 export interface DashboardOverviewProps {
+  isLoading?: boolean;
   documents?: RecentDocumentItem[];
   metrics?: {
     documentsScanned?: number;
@@ -71,6 +73,7 @@ const DEFAULT_DOCUMENTS: RecentDocumentItem[] = [
 ];
 
 export const DashboardOverview: React.FC<DashboardOverviewProps> = ({
+  isLoading = false,
   documents = DEFAULT_DOCUMENTS,
   metrics = {
     documentsScanned: 18,
@@ -83,6 +86,10 @@ export const DashboardOverview: React.FC<DashboardOverviewProps> = ({
 }) => {
   const { user, role, isAdmin, isResearcher } = useAuth();
   const navigate = useNavigate();
+
+  if (isLoading) {
+    return <DashboardSkeleton />;
+  }
 
   const handleUpload = () => {
     if (onUploadClick) {
