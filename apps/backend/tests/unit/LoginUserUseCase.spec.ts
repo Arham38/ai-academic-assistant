@@ -3,6 +3,8 @@ import { LoginUserUseCase } from '../../src/application/use-cases/auth/LoginUser
 import { IUserRepository } from '../../src/domain/repositories/IUserRepository';
 import { IHashProvider } from '../../src/domain/providers/IHashProvider';
 import { ITokenProvider } from '../../src/domain/providers/ITokenProvider';
+import { IRefreshTokenRepository } from '../../src/domain/repositories/IRefreshTokenRepository';
+import { OpaqueTokenProvider } from '../../src/infrastructure/security/OpaqueTokenProvider';
 import { User } from '../../src/domain/entities/User';
 import { UnauthorizedError, ForbiddenError } from '../../src/domain/errors/AppError';
 
@@ -10,6 +12,8 @@ describe('LoginUserUseCase Unit Tests', () => {
   let mockUserRepository: IUserRepository;
   let mockHashProvider: IHashProvider;
   let mockTokenProvider: ITokenProvider;
+  let mockRefreshTokenRepository: IRefreshTokenRepository;
+  let mockOpaqueTokenProvider: OpaqueTokenProvider;
   let useCase: LoginUserUseCase;
 
   beforeEach(() => {
@@ -42,7 +46,27 @@ describe('LoginUserUseCase Unit Tests', () => {
       verifyToken: vi.fn(),
     };
 
-    useCase = new LoginUserUseCase(mockUserRepository, mockHashProvider, mockTokenProvider);
+    mockRefreshTokenRepository = {
+      create: vi.fn().mockImplementation(async (token) => token),
+      findByTokenHash: vi.fn(),
+      revokeById: vi.fn(),
+      revokeFamily: vi.fn(),
+      revokeAllForUser: vi.fn(),
+    };
+
+    mockOpaqueTokenProvider = {
+      generateToken: vi.fn().mockReturnValue('raw.opaque.refresh.token.123'),
+      hashToken: vi.fn().mockReturnValue('hashed_refresh_token_64_chars'),
+      generateFamilyId: vi.fn().mockReturnValue('family-uuid-1234'),
+    };
+
+    useCase = new LoginUserUseCase(
+      mockUserRepository,
+      mockHashProvider,
+      mockTokenProvider,
+      mockRefreshTokenRepository,
+      mockOpaqueTokenProvider,
+    );
   });
 
   it('should successfully authenticate with valid credentials, issue JWT, and return sanitized profile', async () => {
@@ -79,6 +103,7 @@ describe('LoginUserUseCase Unit Tests', () => {
 
     expect(result).toEqual({
       accessToken: 'mocked.jwt.access.token',
+      rawRefreshToken: 'raw.opaque.refresh.token.123',
       user: {
         id: 'valid_user_id',
         email: 'scholar@institution.edu',
