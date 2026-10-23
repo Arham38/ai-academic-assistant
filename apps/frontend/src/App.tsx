@@ -1,27 +1,20 @@
 import React from 'react';
-import { Outlet, Link, useNavigate } from 'react-router-dom';
-import { GraduationCap, LogOut, Shield } from 'lucide-react';
+import { Outlet, Link } from 'react-router-dom';
+import { GraduationCap } from 'lucide-react';
 import { useAuth } from './features/auth/hooks/useAuth';
-import { useLogoutMutation } from './features/auth/authApiSlice';
 
 export const App: React.FC = () => {
-  const { isAuthenticated, user, role, isAdmin } = useAuth();
-  const [logout, { isLoading: isLoggingOut }] = useLogoutMutation();
-  const navigate = useNavigate();
+  const { isAuthenticated } = useAuth();
 
-  const handleLogout = async () => {
-    try {
-      await logout().unwrap();
-    } catch {
-      // Handled in onQueryStarted
-    } finally {
-      navigate('/login');
-    }
-  };
+  // When authenticated, DashboardLayout provides the persistent role-aware layout frame
+  if (isAuthenticated) {
+    return <Outlet />;
+  }
 
+  // Public/Unauthenticated layout shell (Login, Register, Public information)
   return (
-    <div className="min-h-screen bg-slate-50 flex flex-col font-sans">
-      {/* Top Navigation Bar */}
+    <div className="min-h-screen bg-slate-50 flex flex-col font-sans text-slate-900">
+      {/* Public Navigation Header */}
       <header className="bg-white border-b border-slate-200 sticky top-0 z-30 shadow-xs">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
           <Link to="/" className="flex items-center space-x-3 group">
@@ -38,61 +31,29 @@ export const App: React.FC = () => {
             </div>
           </Link>
 
-          <nav className="flex items-center space-x-6 text-sm font-medium text-slate-600">
-            {isAuthenticated ? (
-              <>
-                <Link to="/dashboard" className="hover:text-indigo-600 transition-colors">
-                  Dashboard
-                </Link>
-                <Link to="/settings" className="hover:text-indigo-600 transition-colors">
-                  Settings
-                </Link>
-                {isAdmin && (
-                  <Link
-                    to="/admin"
-                    className="hover:text-indigo-600 transition-colors flex items-center"
-                  >
-                    <Shield className="w-3.5 h-3.5 mr-1 text-purple-600" />
-                    Admin
-                  </Link>
-                )}
-                <span className="text-slate-300">|</span>
-                <span className="text-xs text-slate-500 font-medium">
-                  {user?.email} ({role})
-                </span>
-                <button
-                  onClick={handleLogout}
-                  disabled={isLoggingOut}
-                  className="hover:text-red-600 transition-colors flex items-center disabled:opacity-50"
-                  title="Sign Out"
-                >
-                  <LogOut className="w-4 h-4 mr-1" />
-                  Sign Out
-                </button>
-              </>
-            ) : (
-              <>
-                <Link to="/login" className="hover:text-indigo-600 transition-colors">
-                  Sign In
-                </Link>
-                <Link
-                  to="/register"
-                  className="px-3.5 py-1.5 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors font-semibold text-xs shadow-xs"
-                >
-                  Register
-                </Link>
-              </>
-            )}
+          <nav className="flex items-center space-x-4 text-sm font-medium">
+            <Link
+              to="/login"
+              className="px-3.5 py-1.5 text-slate-600 hover:text-indigo-600 transition-colors font-semibold"
+            >
+              Sign In
+            </Link>
+            <Link
+              to="/register"
+              className="px-4 py-2 bg-indigo-600 text-white rounded-xl hover:bg-indigo-700 transition-colors font-semibold text-xs shadow-xs"
+            >
+              Get Started
+            </Link>
           </nav>
         </div>
       </header>
 
-      {/* Main Content Area */}
-      <main className="flex-1 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 w-full">
+      {/* Public Content Body */}
+      <main className="flex-1 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 w-full flex flex-col justify-center">
         <Outlet />
       </main>
 
-      {/* Footer */}
+      {/* Public Footer */}
       <footer className="bg-white border-t border-slate-200 py-6 text-center text-xs text-slate-400">
         &copy; {new Date().getFullYear()} AI Academic Assistant Platform. Enterprise Multi-Agent
         Architecture.
