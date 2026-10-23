@@ -5,7 +5,14 @@
   "description": "Enterprise-grade AI Academic Assistant platform for semantic plagiarism detection, citation validation, and agentic RAG",
   "author": "Academic AI Engineering Team <dev@institution.edu>",
   "license": "MIT",
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
   "scripts": {
+    "dev:frontend": "npm run dev --workspace=@academic-assistant/frontend",
+    "dev:backend": "npm run dev --workspace=@academic-assistant/backend",
+    "build": "npm run build --workspaces --if-present",
     "lint:ts": "eslint . --ext .ts,.tsx,.js,.jsx",
     "lint:ts:fix": "eslint . --ext .ts,.tsx,.js,.jsx --fix",
     "lint:py": "python -m ruff check .",
@@ -20,6 +27,8 @@
     "prepare": "husky install"
   },
   "devDependencies": {
+    "@commitlint/cli": "^20.5.3",
+    "@commitlint/config-conventional": "^20.5.3",
     "@typescript-eslint/eslint-plugin": "^7.18.0",
     "@typescript-eslint/parser": "^7.18.0",
     "eslint": "^8.57.0",

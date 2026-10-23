@@ -1,0 +1,7 @@
+{
+  "name": "@academic-assistant/eslint-config",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Shared ESLint configuration for AI Academic Assistant workspaces",
+  "main": "index.js"
+}
