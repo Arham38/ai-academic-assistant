@@ -2,6 +2,7 @@ import { IBaseRepository } from './IBaseRepository';
 import { User } from '../entities/User';
 
 export interface IUserRepository extends IBaseRepository<User> {
+  findById(id: string, includeDeleted?: boolean, includePassword?: boolean): Promise<User | null>;
   findByEmail(email: string, includePassword?: boolean): Promise<User | null>;
   findByEmailAndTenant(
     email: string,

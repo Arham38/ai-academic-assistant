@@ -48,9 +48,16 @@ export class MongoUserRepository implements IUserRepository {
     );
   }
 
-  public async findById(id: string, includeDeleted = false): Promise<User | null> {
+  public async findById(
+    id: string,
+    includeDeleted = false,
+    includePassword = false,
+  ): Promise<User | null> {
     const filter = this.applySoftDeleteFilter({ _id: id }, includeDeleted);
-    const doc = await this.model.findOne(filter).lean().exec();
+    const query = includePassword
+      ? this.model.findOne(filter).select('+passwordHash')
+      : this.model.findOne(filter);
+    const doc = await query.lean().exec();
     return doc ? UserMapper.toDomain(doc as RawUserPersistence) : null;
   }
 

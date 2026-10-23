@@ -145,6 +145,31 @@ export class User {
   }
 
   // Domain Business Rules & Invariant Methods
+  public updateProfile(props: { firstName?: string; lastName?: string }): void {
+    if (props.firstName !== undefined) {
+      if (!props.firstName.trim()) {
+        throw new Error('First name cannot be empty.');
+      }
+      this._firstName = props.firstName.trim();
+    }
+    if (props.lastName !== undefined) {
+      if (!props.lastName.trim()) {
+        throw new Error('Last name cannot be empty.');
+      }
+      this._lastName = props.lastName.trim();
+    }
+    this._updatedAt = new Date();
+  }
+
+  public updatePassword(newPasswordHash: string): void {
+    if (!newPasswordHash) {
+      throw new Error('Password hash cannot be empty.');
+    }
+    this._passwordHash = newPasswordHash;
+    this.incrementTokenVersion();
+    this._updatedAt = new Date();
+  }
+
   public hasAvailableQuota(tokensRequested = 0): boolean {
     if (this._status !== 'ACTIVE' || this._isDeleted) {
       return false;
