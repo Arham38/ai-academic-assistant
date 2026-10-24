@@ -111,3 +111,26 @@ def test_process_document_missing_payload_fields(client):
         json={"storageUri": "/uploads/paper.pdf"},  # missing documentId
     )
     assert response.status_code == 422
+
+
+def test_process_document_with_version_id(client):
+    """Verify versionId in payload is passed to service.process_document."""
+    with patch(
+        "src.services.document_processing_service.DocumentProcessingService.process_document",
+        new_callable=AsyncMock,
+    ) as mock_process:
+        response = client.post(
+            "/api/internal/v1/process/document",
+            headers={"X-Internal-Secret": settings.INTERNAL_SERVICE_KEY},
+            json={
+                "documentId": "651a2b3c4d5e6f7a8b9c0d1e",
+                "storageUri": "/uploads/paper-v2.pdf",
+                "versionId": "ver-998877",
+            },
+        )
+        assert response.status_code == 202
+        mock_process.assert_awaited_once_with(
+            document_id="651a2b3c4d5e6f7a8b9c0d1e",
+            storage_uri="/uploads/paper-v2.pdf",
+            version_id="ver-998877",
+        )

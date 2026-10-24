@@ -3,6 +3,7 @@
 import logging
 import os
 from datetime import UTC, datetime
+from typing import Any
 
 from bson import ObjectId, errors
 from fastapi.concurrency import run_in_threadpool
@@ -101,17 +102,20 @@ class DocumentProcessingService:
             return self._db
         return get_database()
 
-    async def process_document(self, document_id: str, storage_uri: str) -> None:
+    async def process_document(
+        self, document_id: str, storage_uri: str, version_id: str | None = None
+    ) -> None:
         """Executes polymorphic extraction based on MIME type and synchronizes DB state.
 
         Lifecycle:
-        1. Set status -> PARSING and retrieve MIME type
+        1. Set status -> PARSING and retrieve MIME type (supporting version isolation)
         2. Validate path safety
         3. Resolve appropriate BaseParser strategy via PARSER_REGISTRY
         4. Offload CPU-bound parsing to threadpool
         5. Sanitize text via multi-stage NLP cleaner
         6. Extract semantic document metadata (title, authors, abstract, keywords)
         7. Set status -> EMBEDDING, populate metadata (wordCount, pageCount, abstract, etc.)
+           utilizing positional operator ($) for specific version isolation.
         - On Error: Set status -> FAILED, populate errorMessage
         """
         # Validate ObjectId representation
@@ -126,16 +130,33 @@ class DocumentProcessingService:
         db = self._get_db()
 
         # Step 1: Update status to PARSING and retrieve stored document metadata
+        filter_query: dict[str, Any] = {"_id": doc_oid}
+        set_initial: dict[str, Any] = {
+            "status": "PARSING",
+            "updatedAt": datetime.now(UTC),
+        }
+        if version_id:
+            filter_query["versions.versionId"] = version_id
+            set_initial["versions.$.status"] = "PARSING"
+
         doc_record = await db.documents.find_one_and_update(
-            {"_id": doc_oid},
-            {
-                "$set": {
-                    "status": "PARSING",
-                    "updatedAt": datetime.now(UTC),
-                }
-            },
+            filter_query,
+            {"$set": set_initial},
             return_document=ReturnDocument.AFTER,
         )
+
+        if not doc_record and version_id:
+            # Fallback to general document lookup if version match didn't find record
+            doc_record = await db.documents.find_one_and_update(
+                {"_id": doc_oid},
+                {
+                    "$set": {
+                        "status": "PARSING",
+                        "updatedAt": datetime.now(UTC),
+                    }
+                },
+                return_document=ReturnDocument.AFTER,
+            )
 
         if not doc_record:
             logger.error(f"Document record not found in MongoDB: {document_id}")
@@ -149,8 +170,16 @@ class DocumentProcessingService:
             # Step 2: Validate filepath against directory traversal
             physical_path = resolve_safe_filepath(storage_uri)
 
-            # Step 3: Determine parser strategy from document MIME type
-            raw_mime = doc_record.get("mimeType", "")
+            # Step 3: Determine parser strategy from document or version MIME type
+            raw_mime = ""
+            if version_id and "versions" in doc_record:
+                for v in doc_record.get("versions", []):
+                    if isinstance(v, dict) and v.get("versionId") == version_id:
+                        raw_mime = v.get("mimeType", "")
+                        break
+            if not raw_mime:
+                raw_mime = doc_record.get("mimeType", "")
+
             mime_type = raw_mime.split(";")[0].strip() if raw_mime else ""
             if not mime_type or mime_type not in self._parser_registry:
                 raise UnsupportedMimeTypeError(
@@ -179,7 +208,7 @@ class DocumentProcessingService:
             extracted_metadata = extractor.extract(cleaned_text)
 
             # Step 7: Transition to EMBEDDING status with extracted metadata
-            set_fields = {
+            set_fields: dict[str, Any] = {
                 "status": "EMBEDDING",
                 "metadata.wordCount": word_count,
                 "metadata.abstract": extracted_metadata.get("abstract"),
@@ -193,7 +222,7 @@ class DocumentProcessingService:
             if extracted_metadata.get("authors") is not None:
                 set_fields["metadata.authors"] = extracted_metadata["authors"]
 
-            unset_fields = {
+            unset_fields: dict[str, Any] = {
                 "errorMessage": "",
             }
 
@@ -203,8 +232,27 @@ class DocumentProcessingService:
                 # Dynamic flow format (DOCX, TXT) without fixed page structure
                 unset_fields["metadata.pageCount"] = ""
 
+            version_meta: dict[str, Any] = {
+                "wordCount": word_count,
+                "abstract": extracted_metadata.get("abstract"),
+                "keywords": extracted_metadata.get("keywords"),
+                "language": doc_record.get("metadata", {}).get("language", "en"),
+            }
+            if extracted_metadata.get("title_extracted"):
+                version_meta["title_extracted"] = extracted_metadata["title_extracted"]
+            if extracted_metadata.get("authors") is not None:
+                version_meta["authors"] = extracted_metadata["authors"]
+            if page_count is not None and page_count >= 0:
+                version_meta["pageCount"] = page_count
+
+            update_filter: dict[str, Any] = {"_id": doc_oid}
+            if version_id:
+                update_filter["versions.versionId"] = version_id
+                set_fields["versions.$.status"] = "EMBEDDING"
+                set_fields["versions.$.metadata"] = version_meta
+
             await db.documents.update_one(
-                {"_id": doc_oid},
+                update_filter,
                 {
                     "$set": set_fields,
                     "$unset": unset_fields,
@@ -219,14 +267,21 @@ class DocumentProcessingService:
             logger.exception(
                 f"Failed to process document {document_id}: {exc}. Transitioning status to FAILED."
             )
+            err_set: dict[str, Any] = {
+                "status": "FAILED",
+                "errorMessage": str(exc),
+                "updatedAt": datetime.now(UTC),
+            }
+            err_query: dict[str, Any] = {"_id": doc_oid}
+            if version_id:
+                err_query["versions.versionId"] = version_id
+                err_set["versions.$.status"] = "FAILED"
+                err_set["versions.$.errorMessage"] = str(exc)
+
             await db.documents.update_one(
-                {"_id": doc_oid},
+                err_query,
                 {
-                    "$set": {
-                        "status": "FAILED",
-                        "errorMessage": str(exc),
-                        "updatedAt": datetime.now(UTC),
-                    }
+                    "$set": err_set,
                 },
             )
 

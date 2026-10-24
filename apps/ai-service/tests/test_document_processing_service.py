@@ -396,3 +396,65 @@ async def test_process_document_unstructured_txt_safe_fallback():
     assert set_fields["metadata.title_extracted"] == "Weekly engineering sync notes."
     assert set_fields["metadata.abstract"] is None
     assert set_fields["metadata.keywords"] is None
+
+
+@pytest.mark.asyncio
+async def test_process_document_with_version_id_positional_update():
+    """Verify processing with version_id updates matching nested version via positional operator."""
+    mock_db = MagicMock()
+    mock_collection = MagicMock()
+    mock_db.documents = mock_collection
+
+    doc_id = str(ObjectId())
+    version_id = "test-ver-uuid-123"
+    mock_collection.find_one_and_update = AsyncMock(
+        return_value={
+            "_id": ObjectId(doc_id),
+            "mimeType": "text/plain",
+            "status": "PARSING",
+            "versions": [
+                {
+                    "versionId": version_id,
+                    "mimeType": "text/plain",
+                    "status": "PARSING",
+                }
+            ],
+        }
+    )
+    mock_collection.update_one = AsyncMock(return_value=MagicMock(matched_count=1))
+
+    with tempfile.TemporaryDirectory() as tmp_dir:
+        doc_path = os.path.join(tmp_dir, "version2_paper.txt")
+        with open(doc_path, "w", encoding="utf-8") as f:
+            f.write(
+                "Deep Reinforcement Learning Revision 2\n\nAbstract: Improved stability."
+            )
+
+        service = DocumentProcessingService(db=mock_db)
+
+        with patch(
+            "src.services.document_processing_service.settings"
+        ) as mock_settings:
+            mock_settings.UPLOAD_DIR = tmp_dir
+            await service.process_document(
+                doc_id, "/uploads/version2_paper.txt", version_id=version_id
+            )
+
+    # Verify find_one_and_update filtered with versions.versionId
+    find_args = mock_collection.find_one_and_update.call_args[0]
+    assert find_args[0] == {"_id": ObjectId(doc_id), "versions.versionId": version_id}
+    assert find_args[1]["$set"]["versions.$.status"] == "PARSING"
+
+    # Verify update_one targeted positional versions.$.metadata and versions.$.status
+    mock_collection.update_one.assert_awaited_once()
+    call_args = mock_collection.update_one.call_args[0]
+    assert call_args[0] == {"_id": ObjectId(doc_id), "versions.versionId": version_id}
+    set_fields = call_args[1]["$set"]
+    assert set_fields["status"] == "EMBEDDING"
+    assert set_fields["versions.$.status"] == "EMBEDDING"
+    assert "versions.$.metadata" in set_fields
+    assert set_fields["versions.$.metadata"]["wordCount"] > 0
+    assert (
+        set_fields["versions.$.metadata"]["title_extracted"]
+        == "Deep Reinforcement Learning Revision 2"
+    )

@@ -35,6 +35,11 @@ class ProcessDocumentRequest(BaseModel):
         alias="storageUri",
         description="Relative or absolute URI of the physical file",
     )
+    version_id: str | None = Field(
+        default=None,
+        alias="versionId",
+        description="Optional version UUID for historical version processing",
+    )
 
     model_config = {
         "populate_by_name": True,
@@ -96,10 +101,16 @@ async def process_document_endpoint(
         f"Received internal process request for document: {payload.document_id} at {payload.storage_uri}"
     )
 
+    task_kwargs = {
+        "document_id": payload.document_id,
+        "storage_uri": payload.storage_uri,
+    }
+    if payload.version_id is not None:
+        task_kwargs["version_id"] = payload.version_id
+
     background_tasks.add_task(
         service.process_document,
-        document_id=payload.document_id,
-        storage_uri=payload.storage_uri,
+        **task_kwargs,
     )
 
     return ProcessDocumentResponse(
