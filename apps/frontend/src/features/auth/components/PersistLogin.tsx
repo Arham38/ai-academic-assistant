@@ -3,18 +3,25 @@ import { Outlet } from 'react-router-dom';
 import { Loader2 } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
 import { useRefreshMutation } from '../authApiSlice';
+import { useLazyGetProfileQuery } from '../../users/userApiSlice';
 
 export const PersistLogin: React.FC = () => {
-  const { token } = useAuth();
+  const { token, user } = useAuth();
   const [refresh] = useRefreshMutation();
-  const [isLoading, setIsLoading] = useState(!token);
+  const [getProfile] = useLazyGetProfileQuery();
+  const [isLoading, setIsLoading] = useState(!token || !user?.firstName);
 
   useEffect(() => {
     let isMounted = true;
 
     const verifyRefreshToken = async () => {
       try {
-        await refresh().unwrap();
+        if (!token) {
+          await refresh().unwrap();
+        }
+        if (!user?.firstName) {
+          await getProfile().unwrap();
+        }
       } catch {
         // User is unauthenticated (no active cookie session)
       } finally {
@@ -24,7 +31,7 @@ export const PersistLogin: React.FC = () => {
       }
     };
 
-    if (!token) {
+    if (!token || !user || !user.firstName) {
       verifyRefreshToken();
     } else {
       setIsLoading(false);
@@ -33,7 +40,7 @@ export const PersistLogin: React.FC = () => {
     return () => {
       isMounted = false;
     };
-  }, [token, refresh]);
+  }, [token, user, refresh, getProfile]);
 
   if (isLoading) {
     return (

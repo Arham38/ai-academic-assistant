@@ -16,6 +16,7 @@ const createMockStore = () => {
       auth: authReducer,
       [baseApi.reducerPath]: baseApi.reducer,
     },
+    middleware: (getDefaultMiddleware) => getDefaultMiddleware().concat(baseApi.middleware),
     preloadedState: {
       auth: {
         user: { id: 'usr_turing', email: 'alan@cambridge.ac.uk', role: 'ADMIN' },

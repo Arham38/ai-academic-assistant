@@ -62,6 +62,8 @@ export class AuthController {
         user: {
           id: result.user.id,
           email: result.user.email,
+          firstName: result.user.firstName,
+          lastName: result.user.lastName,
           role: result.user.role,
         },
       },
@@ -83,6 +85,7 @@ export class AuthController {
       status: 'success',
       data: {
         accessToken: result.accessToken,
+        user: result.user,
       },
     });
   });

@@ -3,10 +3,14 @@ import { Outlet } from 'react-router-dom';
 import { Sidebar } from './Sidebar';
 import { Header } from './Header';
 import { MobileNav } from './MobileNav';
+import { useGetProfileQuery } from '../../features/users/userApiSlice';
 
 const SIDEBAR_STORAGE_KEY = 'academic_assistant_sidebar_collapsed';
 
 export const DashboardLayout: React.FC = () => {
+  // Ensure authenticated user profile (firstName, lastName) is hydrated and synchronized globally
+  useGetProfileQuery();
+
   // Persistent desktop sidebar collapse state
   const [isCollapsed, setIsCollapsed] = useState<boolean>(() => {
     try {
