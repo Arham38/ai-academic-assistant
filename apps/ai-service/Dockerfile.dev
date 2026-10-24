@@ -7,7 +7,10 @@ ENV PYTHONUNBUFFERED=1 \
     PYTHONDONTWRITEBYTECODE=1 \
     PIP_NO_CACHE_DIR=1 \
     POETRY_VERSION=2.5.1 \
-    POETRY_NO_INTERACTION=1
+    POETRY_NO_INTERACTION=1 \
+    HF_HOME=/root/.cache/huggingface \
+    TORCH_HOME=/root/.cache/torch \
+    TRANSFORMERS_CACHE=/root/.cache/huggingface
 
 # Install system dependencies for PyTorch, PDF extraction, and network tools
 RUN apt-get update && apt-get install -y --no-install-recommends \
