@@ -45,6 +45,14 @@ class CorruptedDOCXError(DOCXProcessingError):
     """Raised when a DOCX file is corrupted, truncated, or not a valid OpenXML package."""
 
 
+class TXTProcessingError(ExtractionError):
+    """Base exception for TXT parsing and extraction errors."""
+
+
+class FileNotFoundTXTError(TXTProcessingError):
+    """Raised when the specified TXT file does not exist on disk."""
+
+
 class EmptyDocumentError(ExtractionError):
     """Raised when an uploaded document contains no readable text."""
 
