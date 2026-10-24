@@ -19,8 +19,8 @@ from src.infrastructure.database.mongo_client import get_database
 from src.pipelines.extraction.docx_parser import DocxParser
 from src.pipelines.extraction.parser_interface import BaseParser
 from src.pipelines.extraction.pdf_parser import PDFParser
-from src.pipelines.extraction.text_sanitizer import sanitize_text
 from src.pipelines.extraction.txt_parser import TxtParser
+from src.pipelines.nlp.text_cleaner import TextCleaner
 
 logger = logging.getLogger(__name__)
 
@@ -86,11 +86,13 @@ class DocumentProcessingService:
         self,
         db: AsyncIOMotorDatabase | None = None,
         parser_registry: dict[str, type[BaseParser]] | None = None,
+        cleaner: TextCleaner | None = None,
     ):
         self._db = db
         self._parser_registry = (
             parser_registry if parser_registry is not None else PARSER_REGISTRY
         )
+        self._cleaner = cleaner
 
     def _get_db(self) -> AsyncIOMotorDatabase:
         if self._db is not None:
@@ -160,8 +162,13 @@ class DocumentProcessingService:
                 parser.extract, physical_path
             )
 
-            # Step 5: Sanitize extracted text
-            cleaned_text = sanitize_text(raw_text)
+            # Step 5: Sanitize extracted text via multi-stage NLP pipeline
+            if self._cleaner is not None:
+                cleaned_text = self._cleaner.clean(raw_text)
+            else:
+                cleaner = TextCleaner(enable_dehyphenation=(mime_type != "text/plain"))
+                cleaned_text = cleaner.clean(raw_text)
+
             word_count = len(cleaned_text.split())
 
             # Step 6: Transition to EMBEDDING status with extracted metadata
