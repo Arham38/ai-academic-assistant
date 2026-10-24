@@ -1,4 +1,5 @@
 import React from 'react';
+import { Link } from 'react-router-dom';
 import { FileText, Upload, Filter, Clock, CheckCircle2, AlertTriangle } from 'lucide-react';
 
 export const DocumentsPage: React.FC = () => {
@@ -47,13 +48,13 @@ export const DocumentsPage: React.FC = () => {
         </div>
 
         <div className="flex items-center space-x-3">
-          <button
-            type="button"
+          <Link
+            to="/documents/upload"
             className="inline-flex items-center px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-semibold shadow-xs transition-colors"
           >
             <Upload className="w-4 h-4 mr-2" />
             Upload New Manuscript
-          </button>
+          </Link>
         </div>
       </div>
 

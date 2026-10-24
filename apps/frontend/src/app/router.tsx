@@ -8,6 +8,7 @@ import { DashboardOverview } from '../pages/dashboard/DashboardOverview';
 import { StudentDashboardPage } from '../pages/dashboard/StudentDashboardPage';
 import { ResearcherHubPage } from '../pages/dashboard/ResearcherHubPage';
 import { DocumentsPage, DocumentLayout, DocumentOverview, DocumentChat } from '../pages/documents';
+import { UploadPage } from '../features/documents/pages/UploadPage';
 import { SettingsPage } from '../pages/settings/SettingsPage';
 import { AdminPage } from '../pages/admin/AdminPage';
 import { NotFoundPage } from '../pages/NotFoundPage';
@@ -108,6 +109,10 @@ export const router = createBrowserRouter([
                       {
                         index: true,
                         element: <DocumentsPage />,
+                      },
+                      {
+                        path: 'upload',
+                        element: <UploadPage />,
                       },
                       {
                         path: ':documentId',
