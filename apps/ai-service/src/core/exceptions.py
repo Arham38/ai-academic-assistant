@@ -5,7 +5,15 @@ class AIProcessingError(Exception):
     """Base exception for all AI microservice operational errors."""
 
 
-class PDFProcessingError(AIProcessingError):
+class ExtractionError(AIProcessingError):
+    """Base exception for document extraction and parsing failures."""
+
+
+class UnsupportedMimeTypeError(AIProcessingError):
+    """Raised when an incoming document MIME type is not supported by any registered parser."""
+
+
+class PDFProcessingError(ExtractionError):
     """Base exception for PDF parsing and extraction errors."""
 
 
@@ -23,6 +31,22 @@ class EncryptedPDFError(PDFProcessingError):
 
 class EmptyPDFError(PDFProcessingError):
     """Raised when the PDF document contains 0 pages or contains no extractable content."""
+
+
+class DOCXProcessingError(ExtractionError):
+    """Base exception for DOCX parsing and extraction errors."""
+
+
+class FileNotFoundDOCXError(DOCXProcessingError):
+    """Raised when the specified DOCX file does not exist on disk."""
+
+
+class CorruptedDOCXError(DOCXProcessingError):
+    """Raised when a DOCX file is corrupted, truncated, or not a valid OpenXML package."""
+
+
+class EmptyDocumentError(ExtractionError):
+    """Raised when an uploaded document contains no readable text."""
 
 
 class DocumentNotFoundError(AIProcessingError):

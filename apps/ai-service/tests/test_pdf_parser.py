@@ -12,6 +12,7 @@ from src.core.exceptions import (
     FileNotFoundPDFError,
 )
 from src.pipelines.extraction.pdf_parser import (
+    PDFParser,
     extract_text_from_pdf,
     sort_blocks_for_academic_reading_order,
 )
@@ -106,6 +107,13 @@ def test_extract_single_column_pdf():
         assert "Title of Research Paper" in text
         assert "Methodology section" in text
         assert word_count > 10
+
+        # Also verify PDFParser strategy class
+        parser = PDFParser()
+        p_text, p_pages, p_words = parser.extract(pdf_path)
+        assert p_pages == 1
+        assert p_text == text
+        assert p_words == word_count
 
 
 def test_sort_blocks_two_column_academic_order():

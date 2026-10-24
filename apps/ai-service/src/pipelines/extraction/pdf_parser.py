@@ -11,6 +11,7 @@ from src.core.exceptions import (
     EncryptedPDFError,
     FileNotFoundPDFError,
 )
+from src.pipelines.extraction.parser_interface import BaseParser
 
 logger = logging.getLogger(__name__)
 
@@ -163,3 +164,11 @@ def extract_text_from_pdf(filepath: str) -> tuple[str, int, int]:
         word_count = len(full_text.split())
 
         return full_text, page_count, word_count
+
+
+class PDFParser(BaseParser):
+    """High-fidelity PDF document parser using PyMuPDF implementing BaseParser strategy."""
+
+    def extract(self, filepath: str) -> tuple[str, int, int]:
+        """Extracts text, page count, and approximate word count from a PDF document."""
+        return extract_text_from_pdf(filepath)
