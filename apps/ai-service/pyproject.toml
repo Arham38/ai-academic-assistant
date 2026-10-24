@@ -19,6 +19,8 @@ chromadb = ">=0.5.4"
 redis = ">=5.0.0"
 pdfplumber = ">=0.11.0"
 pypdf = ">=4.2.0"
+pymupdf = ">=1.24.0"
+motor = ">=3.5.0"
 python-multipart = ">=0.0.9"
 
 [tool.poetry.group.dev.dependencies]
