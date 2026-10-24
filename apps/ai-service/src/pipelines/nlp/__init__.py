@@ -12,6 +12,7 @@ from src.pipelines.nlp.cleaner_rules import (
     PAGE_NUMBER_REGEX,
     URL_REGEX,
 )
+from src.pipelines.nlp.text_cleaner import TextCleaner
 
 __all__ = [
     "CITATION_BRACKET_REGEX",
@@ -23,5 +24,6 @@ __all__ = [
     "MULTIPLE_NEWLINES_REGEX",
     "PAGE_ARTIFACT_REGEX",
     "PAGE_NUMBER_REGEX",
+    "TextCleaner",
     "URL_REGEX",
 ]
