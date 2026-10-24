@@ -59,6 +59,15 @@ export class ConflictError extends AppError {
   }
 }
 
+export class PayloadTooLargeError extends AppError {
+  public readonly statusCode = 413;
+  public readonly errorCode = 'PAYLOAD_TOO_LARGE';
+
+  constructor(message = 'File size exceeds the allowed limit.') {
+    super(message);
+  }
+}
+
 export class InternalServerError extends AppError {
   public readonly statusCode = 500;
   public readonly errorCode = 'INTERNAL_SERVER_ERROR';

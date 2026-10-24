@@ -1,4 +1,5 @@
 import { Request, Response, NextFunction, ErrorRequestHandler } from 'express';
+import multer from 'multer';
 import { ZodError } from 'zod';
 import { AppError } from '../../domain/errors/AppError';
 import { logger } from '../../infrastructure/logging/logger';
@@ -24,10 +25,37 @@ export const errorHandler: ErrorRequestHandler = (
     });
 
     res.status(err.statusCode).json({
-      type: `https://errors.academic-assistant.internal/${err.errorCode.toLowerCase()}`,
+      type: `https://errors.academic-assistant.internal/${err.errorCode.toLowerCase().replace(/_/g, '-')}`,
       title: err.name,
       status: err.statusCode,
       detail: err.message,
+      instance: req.originalUrl,
+      timestamp,
+    });
+    return;
+  }
+
+  // 2. Multer Ingestion / Multipart Errors
+  if (err instanceof multer.MulterError) {
+    const isFileSize = err.code === 'LIMIT_FILE_SIZE';
+    const statusCode = isFileSize ? 413 : 400;
+    const errorCode = isFileSize ? 'PAYLOAD_TOO_LARGE' : 'BAD_REQUEST';
+    const detail = isFileSize ? 'File size exceeds maximum allowed limit of 10MB.' : err.message;
+
+    logger.warn({
+      errorCode,
+      statusCode,
+      message: detail,
+      multerCode: err.code,
+      path: req.originalUrl,
+      method: req.method,
+    });
+
+    res.status(statusCode).json({
+      type: `https://errors.academic-assistant.internal/${errorCode.toLowerCase().replace(/_/g, '-')}`,
+      title: isFileSize ? 'Payload Too Large' : 'Bad Request',
+      status: statusCode,
+      detail,
       instance: req.originalUrl,
       timestamp,
     });
