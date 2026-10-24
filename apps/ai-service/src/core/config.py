@@ -21,7 +21,7 @@ class Settings(BaseSettings):
     # Service-to-service internal authentication secret
     INTERNAL_SERVICE_KEY: str = os.getenv(
         "INTERNAL_SERVICE_KEY",
-        "default-internal-microservice-secret-change-in-prod",
+        os.getenv("INTERNAL_SERVICE_SECRET", "dev_internal_mesh_key_change_in_prod"),
     )
 
     # Base physical upload directory (shared Docker volume / host path)
