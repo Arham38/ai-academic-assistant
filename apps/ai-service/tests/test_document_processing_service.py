@@ -301,3 +301,98 @@ def test_parser_registry_contains_supported_mimes():
         in PARSER_REGISTRY
     )
     assert "text/plain" in PARSER_REGISTRY
+
+
+@pytest.mark.asyncio
+async def test_process_document_populates_extracted_metadata():
+    """Verify academic document processing extracts title, abstract, and keywords into MongoDB."""
+    mock_db = MagicMock()
+    mock_collection = MagicMock()
+    mock_db.documents = mock_collection
+
+    doc_id = str(ObjectId())
+    mock_collection.find_one_and_update = AsyncMock(
+        return_value={
+            "_id": ObjectId(doc_id),
+            "mimeType": "text/plain",
+            "status": "PARSING",
+        }
+    )
+    mock_collection.update_one = AsyncMock(return_value=MagicMock(matched_count=1))
+
+    with tempfile.TemporaryDirectory() as tmp_dir:
+        doc_path = os.path.join(tmp_dir, "academic_paper.txt")
+        with open(doc_path, "w", encoding="utf-8") as f:
+            f.write(
+                "Transformer Models for Academic Reasoning\n\n"
+                "Authors: Alan Turing, Ada Lovelace\n\n"
+                "Abstract\n\n"
+                "We demonstrate self-attention mechanisms applied to scientific discovery.\n\n"
+                "Keywords: transformers, reasoning, ai\n\n"
+                "1. Introduction\n\n"
+                "Foundation models continue to evolve."
+            )
+
+        service = DocumentProcessingService(db=mock_db)
+
+        with patch(
+            "src.services.document_processing_service.settings"
+        ) as mock_settings:
+            mock_settings.UPLOAD_DIR = tmp_dir
+            await service.process_document(doc_id, "/uploads/academic_paper.txt")
+
+    mock_collection.update_one.assert_awaited_once()
+    call_args = mock_collection.update_one.call_args[0]
+    set_fields = call_args[1]["$set"]
+    assert set_fields["status"] == "EMBEDDING"
+    assert (
+        set_fields["metadata.title_extracted"]
+        == "Transformer Models for Academic Reasoning"
+    )
+    assert set_fields["metadata.authors"] == ["Alan Turing", "Ada Lovelace"]
+    assert (
+        set_fields["metadata.abstract"]
+        == "We demonstrate self-attention mechanisms applied to scientific discovery."
+    )
+    assert set_fields["metadata.keywords"] == ["transformers", "reasoning", "ai"]
+
+
+@pytest.mark.asyncio
+async def test_process_document_unstructured_txt_safe_fallback():
+    """Verify unstructured TXT sets abstract and keywords to None without throwing."""
+    mock_db = MagicMock()
+    mock_collection = MagicMock()
+    mock_db.documents = mock_collection
+
+    doc_id = str(ObjectId())
+    mock_collection.find_one_and_update = AsyncMock(
+        return_value={
+            "_id": ObjectId(doc_id),
+            "mimeType": "text/plain",
+            "status": "PARSING",
+        }
+    )
+    mock_collection.update_one = AsyncMock(return_value=MagicMock(matched_count=1))
+
+    with tempfile.TemporaryDirectory() as tmp_dir:
+        doc_path = os.path.join(tmp_dir, "unstructured_notes.txt")
+        with open(doc_path, "w", encoding="utf-8") as f:
+            f.write(
+                "Weekly engineering sync notes.\nNo abstract or formal keywords here."
+            )
+
+        service = DocumentProcessingService(db=mock_db)
+
+        with patch(
+            "src.services.document_processing_service.settings"
+        ) as mock_settings:
+            mock_settings.UPLOAD_DIR = tmp_dir
+            await service.process_document(doc_id, "/uploads/unstructured_notes.txt")
+
+    mock_collection.update_one.assert_awaited_once()
+    call_args = mock_collection.update_one.call_args[0]
+    set_fields = call_args[1]["$set"]
+    assert set_fields["status"] == "EMBEDDING"
+    assert set_fields["metadata.title_extracted"] == "Weekly engineering sync notes."
+    assert set_fields["metadata.abstract"] is None
+    assert set_fields["metadata.keywords"] is None
