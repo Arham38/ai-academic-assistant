@@ -160,6 +160,80 @@ async def test_process_docx_document_success():
 
 
 @pytest.mark.asyncio
+async def test_process_txt_document_success():
+    """Verify TXT processing routes to TxtParser, populating wordCount and unsetting pageCount."""
+    mock_db = MagicMock()
+    mock_collection = MagicMock()
+    mock_db.documents = mock_collection
+
+    doc_id = str(ObjectId())
+    mock_collection.find_one_and_update = AsyncMock(
+        return_value={
+            "_id": ObjectId(doc_id),
+            "mimeType": "text/plain",
+            "status": "PARSING",
+        }
+    )
+    mock_collection.update_one = AsyncMock(return_value=MagicMock(matched_count=1))
+
+    with tempfile.TemporaryDirectory() as tmp_dir:
+        txt_path = os.path.join(tmp_dir, "notes.txt")
+        with open(txt_path, "w", encoding="utf-8") as f:
+            f.write("Dataset notes and LaTeX equations for analysis.")
+
+        service = DocumentProcessingService(db=mock_db)
+
+        with patch(
+            "src.services.document_processing_service.settings"
+        ) as mock_settings:
+            mock_settings.UPLOAD_DIR = tmp_dir
+            await service.process_document(doc_id, "/uploads/notes.txt")
+
+    mock_collection.update_one.assert_awaited_once()
+    call_args = mock_collection.update_one.call_args[0]
+    assert call_args[1]["$set"]["status"] == "EMBEDDING"
+    assert call_args[1]["$set"]["metadata.wordCount"] > 5
+    assert "metadata.pageCount" not in call_args[1]["$set"]
+    assert call_args[1]["$unset"]["metadata.pageCount"] == ""
+
+
+@pytest.mark.asyncio
+async def test_process_txt_with_charset_parameter():
+    """Verify MIME types with parameters (e.g. text/plain; charset=utf-8) route successfully."""
+    mock_db = MagicMock()
+    mock_collection = MagicMock()
+    mock_db.documents = mock_collection
+
+    doc_id = str(ObjectId())
+    mock_collection.find_one_and_update = AsyncMock(
+        return_value={
+            "_id": ObjectId(doc_id),
+            "mimeType": "text/plain; charset=utf-8",
+            "status": "PARSING",
+        }
+    )
+    mock_collection.update_one = AsyncMock(return_value=MagicMock(matched_count=1))
+
+    with tempfile.TemporaryDirectory() as tmp_dir:
+        txt_path = os.path.join(tmp_dir, "charset_notes.txt")
+        with open(txt_path, "w", encoding="utf-8") as f:
+            f.write("Valid UTF-8 plain text with charset parameter in MIME header.")
+
+        service = DocumentProcessingService(db=mock_db)
+
+        with patch(
+            "src.services.document_processing_service.settings"
+        ) as mock_settings:
+            mock_settings.UPLOAD_DIR = tmp_dir
+            await service.process_document(doc_id, "/uploads/charset_notes.txt")
+
+    mock_collection.update_one.assert_awaited_once()
+    call_args = mock_collection.update_one.call_args[0]
+    assert call_args[1]["$set"]["status"] == "EMBEDDING"
+    assert call_args[1]["$set"]["metadata.wordCount"] > 5
+
+
+@pytest.mark.asyncio
 async def test_process_document_unsupported_mime_type():
     """Verify unsupported MIME type transitions document status to FAILED."""
     mock_db = MagicMock()

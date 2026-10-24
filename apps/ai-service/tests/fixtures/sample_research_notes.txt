@@ -1,0 +1,4 @@
+Title: Empirical Evaluation of RAG Architectures
+
+Notes on vector store embeddings and chunking strategies.
+Accuracy reached 95.4%.
