@@ -63,6 +63,10 @@ coverage/
 htmlcov/
 .pytest_cache/
 
+# Local Uploads
+uploads/
+apps/backend/uploads/
+
 # IDE / Editor
 .idea/
 .vscode/*
