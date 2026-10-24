@@ -7,6 +7,8 @@ import { Card, CardHeader, CardTitle, CardContent } from '../card';
 import { Badge } from '../badge';
 import { Skeleton } from '../skeleton';
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '../table';
+import { Progress } from '../progress';
+import { Toast } from '../toast';
 
 describe('UI Primitives Component Suite', () => {
   it('should render <Card /> and subcomponents properly', () => {
@@ -60,5 +62,29 @@ describe('UI Primitives Component Suite', () => {
 
     expect(screen.getByText('Col 1')).toBeInTheDocument();
     expect(screen.getByText('Data 1')).toBeInTheDocument();
+  });
+
+  it('should render <Progress /> with correct percentage and aria attributes', () => {
+    const { rerender } = render(<Progress value={45} max={100} showLabel={true} />);
+    const progressBar = screen.getByRole('progressbar');
+
+    expect(progressBar).toHaveAttribute('aria-valuenow', '45');
+    expect(progressBar).toHaveAttribute('aria-valuemin', '0');
+    expect(progressBar).toHaveAttribute('aria-valuemax', '100');
+    expect(screen.getByText('45%')).toBeInTheDocument();
+
+    rerender(<Progress value={120} max={100} />);
+    expect(progressBar).toHaveAttribute('aria-valuenow', '100');
+  });
+
+  it('should render <Toast /> with alert role, message, and close handler', () => {
+    render(
+      <Toast variant="error" title="Upload Error" message="Unsupported file type provided." />,
+    );
+
+    const alert = screen.getByRole('alert');
+    expect(alert).toBeInTheDocument();
+    expect(screen.getByText('Upload Error')).toBeInTheDocument();
+    expect(screen.getByText('Unsupported file type provided.')).toBeInTheDocument();
   });
 });
