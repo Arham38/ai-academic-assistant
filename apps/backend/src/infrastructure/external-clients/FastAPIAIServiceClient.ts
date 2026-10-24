@@ -11,20 +11,29 @@ export class FastAPIAIServiceClient implements IAIServiceClient {
     this.secretKey = secretKey || env.INTERNAL_SERVICE_SECRET;
   }
 
-  public async triggerDocumentProcessing(documentId: string, storageUri: string): Promise<void> {
+  public async triggerDocumentProcessing(
+    documentId: string,
+    storageUri: string,
+    versionId?: string,
+  ): Promise<void> {
     const url = `${this.baseUrl}/api/internal/v1/process/document`;
 
     try {
+      const payload: Record<string, unknown> = {
+        documentId,
+        storageUri,
+      };
+      if (versionId) {
+        payload.versionId = versionId;
+      }
+
       const response = await fetch(url, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'X-Internal-Secret': this.secretKey,
         },
-        body: JSON.stringify({
-          documentId,
-          storageUri,
-        }),
+        body: JSON.stringify(payload),
       });
 
       if (!response.ok) {

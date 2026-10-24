@@ -7,6 +7,11 @@ export interface IAIServiceClient {
    *
    * @param documentId MongoDB document ID
    * @param storageUri Relative or absolute storage path to the uploaded file
+   * @param versionId Optional version UUID to target specific version
    */
-  triggerDocumentProcessing(documentId: string, storageUri: string): Promise<void>;
+  triggerDocumentProcessing(
+    documentId: string,
+    storageUri: string,
+    versionId?: string,
+  ): Promise<void>;
 }
