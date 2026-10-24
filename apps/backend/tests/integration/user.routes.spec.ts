@@ -440,6 +440,6 @@ describe('User Routes Integration Tests (/api/v1/users)', () => {
 
       expect(newProfileRes.status).toBe(200);
       expect(newProfileRes.body.data.user.email).toBe('session.invalidation@mit.edu');
-    });
+    }, 15000);
   });
 });

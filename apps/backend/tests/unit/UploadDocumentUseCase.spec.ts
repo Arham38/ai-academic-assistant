@@ -6,6 +6,7 @@ import {
 } from '../../src/application/use-cases/documents/UploadDocumentUseCase';
 import { IStorageProvider } from '../../src/domain/providers/IStorageProvider';
 import { IDocumentRepository } from '../../src/domain/repositories/IDocumentRepository';
+import { IAIServiceClient } from '../../src/domain/providers/IAIServiceClient';
 import { Document } from '../../src/domain/entities/Document';
 import { DocumentStatus } from '../../src/domain/types/DocumentStatus';
 import { BadRequestError, PayloadTooLargeError } from '../../src/domain/errors/AppError';
@@ -13,6 +14,7 @@ import { BadRequestError, PayloadTooLargeError } from '../../src/domain/errors/A
 describe('UploadDocumentUseCase Unit Tests', () => {
   let mockStorageProvider: IStorageProvider;
   let mockDocumentRepository: IDocumentRepository;
+  let mockAIServiceClient: IAIServiceClient;
   let useCase: UploadDocumentUseCase;
 
   const validDto: UploadDocumentDTO = {
@@ -54,7 +56,15 @@ describe('UploadDocumentUseCase Unit Tests', () => {
       findById: vi.fn(),
     };
 
-    useCase = new UploadDocumentUseCase(mockStorageProvider, mockDocumentRepository);
+    mockAIServiceClient = {
+      triggerDocumentProcessing: vi.fn().mockResolvedValue(undefined),
+    };
+
+    useCase = new UploadDocumentUseCase(
+      mockStorageProvider,
+      mockDocumentRepository,
+      mockAIServiceClient,
+    );
   });
 
   it('should successfully upload and persist a document in PENDING state', async () => {
@@ -74,6 +84,21 @@ describe('UploadDocumentUseCase Unit Tests', () => {
     expect(result.storageUri).toBe('/uploads/mock-uuid-123.pdf');
     expect(result.status).toBe(DocumentStatus.PENDING);
     expect(mockStorageProvider.deleteFile).not.toHaveBeenCalled();
+    expect(mockAIServiceClient.triggerDocumentProcessing).toHaveBeenCalledWith(
+      '66a1b2c3d4e5f6a7b8c9d0e1',
+      '/uploads/mock-uuid-123.pdf',
+    );
+  });
+
+  it('should not fail document upload if AI service dispatch throws an error', async () => {
+    vi.mocked(mockAIServiceClient.triggerDocumentProcessing).mockRejectedValueOnce(
+      new Error('FastAPI offline'),
+    );
+
+    const result = await useCase.execute(validDto);
+
+    expect(result.id).toBe('66a1b2c3d4e5f6a7b8c9d0e1');
+    expect(result.status).toBe(DocumentStatus.PENDING);
   });
 
   it('should throw BadRequestError if userId is missing', async () => {

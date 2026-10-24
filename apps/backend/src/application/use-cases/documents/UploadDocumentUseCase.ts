@@ -1,5 +1,6 @@
 import { IStorageProvider } from '../../../domain/providers/IStorageProvider';
 import { IDocumentRepository } from '../../../domain/repositories/IDocumentRepository';
+import { IAIServiceClient } from '../../../domain/providers/IAIServiceClient';
 import { Document } from '../../../domain/entities/Document';
 import {
   DocumentStatus,
@@ -40,6 +41,7 @@ export class UploadDocumentUseCase {
   constructor(
     private readonly storageProvider: IStorageProvider,
     private readonly documentRepository: IDocumentRepository,
+    private readonly aiServiceClient?: IAIServiceClient,
   ) {}
 
   public async execute(dto: UploadDocumentDTO): Promise<UploadDocumentResponseDTO> {
@@ -99,6 +101,19 @@ export class UploadDocumentUseCase {
         userId: persistedDoc.userId,
         status: persistedDoc.status,
       });
+
+      // 5. Trigger downstream asynchronous processing in AI microservice
+      if (this.aiServiceClient && persistedDoc.id) {
+        this.aiServiceClient
+          .triggerDocumentProcessing(persistedDoc.id, persistedDoc.storageUri)
+          .catch((triggerErr) => {
+            logger.warn({
+              message: 'Background dispatch to AI service failed',
+              documentId: persistedDoc.id,
+              err: triggerErr,
+            });
+          });
+      }
 
       return {
         id: persistedDoc.id!,

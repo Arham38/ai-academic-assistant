@@ -5,6 +5,7 @@ import { DocumentController } from '../controllers/DocumentController';
 import { UploadDocumentUseCase } from '../../application/use-cases/documents/UploadDocumentUseCase';
 import { localStorageProvider } from '../../infrastructure/storage/LocalStorageProvider';
 import { mongoDocumentRepository } from '../../infrastructure/database/mongodb/MongoDocumentRepository';
+import { fastAPIAIServiceClient } from '../../infrastructure/external-clients/FastAPIAIServiceClient';
 
 export const createDocumentRouter = (documentController?: DocumentController): Router => {
   const router = Router();
@@ -15,6 +16,7 @@ export const createDocumentRouter = (documentController?: DocumentController): R
       const uploadDocumentUseCase = new UploadDocumentUseCase(
         localStorageProvider,
         mongoDocumentRepository,
+        fastAPIAIServiceClient,
       );
       return new DocumentController(uploadDocumentUseCase);
     })();
