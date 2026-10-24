@@ -5,5 +5,13 @@ from src.infrastructure.ai.device_manager import (
     device_manager,
     get_device,
 )
+from src.infrastructure.ai.embedding_provider import IEmbeddingProvider
+from src.infrastructure.ai.hf_embedding_service import HFEmbeddingService
 
-__all__ = ["DeviceManager", "device_manager", "get_device"]
+__all__ = [
+    "DeviceManager",
+    "device_manager",
+    "get_device",
+    "IEmbeddingProvider",
+    "HFEmbeddingService",
+]
