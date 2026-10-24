@@ -145,10 +145,11 @@ class DocumentProcessingService:
             physical_path = resolve_safe_filepath(storage_uri)
 
             # Step 3: Determine parser strategy from document MIME type
-            mime_type = doc_record.get("mimeType")
+            raw_mime = doc_record.get("mimeType", "")
+            mime_type = raw_mime.split(";")[0].strip() if raw_mime else ""
             if not mime_type or mime_type not in self._parser_registry:
                 raise UnsupportedMimeTypeError(
-                    f"Unsupported document MIME type: '{mime_type}'. Supported formats: {list(self._parser_registry.keys())}"
+                    f"Unsupported document MIME type: '{raw_mime}'. Supported formats: {list(self._parser_registry.keys())}"
                 )
 
             parser_cls = self._parser_registry[mime_type]
