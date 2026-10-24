@@ -1,5 +1,5 @@
 import { Types } from 'mongoose';
-import { Document, DocumentMetadata } from '../../../domain/entities/Document';
+import { Document, DocumentMetadata, DocumentVersion } from '../../../domain/entities/Document';
 import { DocumentStatus, AllowedMimeType } from '../../../domain/types/DocumentStatus';
 
 export interface RawDocumentPersistence {
@@ -12,6 +12,8 @@ export interface RawDocumentPersistence {
   mimeType: string;
   sizeBytes: number;
   status: string;
+  activeVersionId?: string;
+  versions?: DocumentVersion[];
   errorMessage?: string;
   metadata?: Partial<DocumentMetadata>;
   isDeleted?: boolean;
@@ -37,6 +39,10 @@ export class DocumentMapper {
       mimeType: raw.mimeType as AllowedMimeType,
       sizeBytes: raw.sizeBytes,
       status: raw.status as DocumentStatus,
+      activeVersionId: raw.activeVersionId,
+      versions: raw.versions
+        ? raw.versions.map((v) => ({ ...v, uploadedAt: new Date(v.uploadedAt) }))
+        : undefined,
       errorMessage: raw.errorMessage,
       metadata: raw.metadata,
       isDeleted: raw.isDeleted ?? false,
@@ -59,6 +65,18 @@ export class DocumentMapper {
       mimeType: document.mimeType,
       sizeBytes: document.sizeBytes,
       status: document.status,
+      activeVersionId: document.activeVersionId,
+      versions: document.versions.map((v) => ({
+        versionId: v.versionId,
+        versionNumber: v.versionNumber,
+        originalFilename: v.originalFilename,
+        storageUri: v.storageUri,
+        mimeType: v.mimeType,
+        sizeBytes: v.sizeBytes,
+        status: v.status,
+        metadata: { ...v.metadata },
+        uploadedAt: v.uploadedAt,
+      })),
       errorMessage: document.errorMessage,
       metadata: { ...document.metadata },
       isDeleted: document.isDeleted,

@@ -3,7 +3,7 @@ import {
   IDocumentRepository,
   PaginatedDocuments,
 } from '../../../domain/repositories/IDocumentRepository';
-import { Document } from '../../../domain/entities/Document';
+import { Document, DocumentVersion } from '../../../domain/entities/Document';
 import { DocumentStatus } from '../../../domain/types/DocumentStatus';
 import { DocumentModel, DocumentDocument } from './models/DocumentModel';
 import { DocumentMapper, RawDocumentPersistence } from '../mappers/DocumentMapper';
@@ -248,6 +248,87 @@ export class MongoDocumentRepository implements IDocumentRepository {
 
     const count = await this.model.countDocuments(filter).limit(1).exec();
     return count > 0;
+  }
+
+  /**
+   * Appends a new version to the document's history and updates active version pointer.
+   */
+  public async addVersion(
+    documentId: string,
+    userId: string,
+    version: DocumentVersion,
+  ): Promise<Document | null> {
+    if (!Types.ObjectId.isValid(documentId) || !Types.ObjectId.isValid(userId)) {
+      return null;
+    }
+
+    const filter = this.applySoftDeleteFilter({
+      _id: new Types.ObjectId(documentId),
+      userId: new Types.ObjectId(userId),
+    });
+
+    const updated = await this.model
+      .findOneAndUpdate(
+        filter,
+        {
+          $push: { versions: version },
+          $set: {
+            activeVersionId: version.versionId,
+            status: DocumentStatus.PENDING,
+            storageUri: version.storageUri,
+            mimeType: version.mimeType,
+            sizeBytes: version.sizeBytes,
+            originalFilename: version.originalFilename,
+            updatedAt: new Date(),
+          },
+        },
+        { new: true },
+      )
+      .lean()
+      .exec();
+
+    return updated ? DocumentMapper.toDomain(updated as RawDocumentPersistence) : null;
+  }
+
+  /**
+   * Reverts active version pointer to an existing historical version.
+   */
+  public async restoreVersion(
+    documentId: string,
+    userId: string,
+    versionId: string,
+  ): Promise<Document | null> {
+    if (!Types.ObjectId.isValid(documentId) || !Types.ObjectId.isValid(userId)) {
+      return null;
+    }
+
+    const filter = this.applySoftDeleteFilter({
+      _id: new Types.ObjectId(documentId),
+      userId: new Types.ObjectId(userId),
+    });
+
+    const doc = await this.model.findOne(filter).exec();
+    if (!doc) {
+      return null;
+    }
+
+    const targetVersion = doc.versions?.find((v) => v.versionId === versionId);
+    if (!targetVersion) {
+      throw new Error(`Version with ID "${versionId}" not found in document.`);
+    }
+
+    doc.activeVersionId = targetVersion.versionId;
+    doc.storageUri = targetVersion.storageUri;
+    doc.mimeType = targetVersion.mimeType;
+    doc.sizeBytes = targetVersion.sizeBytes;
+    doc.originalFilename = targetVersion.originalFilename;
+    if (targetVersion.metadata) {
+      doc.metadata = { ...doc.metadata, ...targetVersion.metadata };
+    }
+    doc.updatedAt = new Date();
+
+    const saved = await doc.save();
+    return DocumentMapper.toDomain(saved.toObject() as RawDocumentPersistence);
   }
 
   /**

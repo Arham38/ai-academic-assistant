@@ -19,6 +19,18 @@ export interface DocumentMetadataSubdocument {
   [key: string]: unknown;
 }
 
+export interface DocumentVersionSubdocument {
+  versionId: string;
+  versionNumber: number;
+  originalFilename: string;
+  storageUri: string;
+  mimeType: AllowedMimeType;
+  sizeBytes: number;
+  status?: DocumentStatus;
+  metadata: DocumentMetadataSubdocument;
+  uploadedAt: Date;
+}
+
 export interface DocumentDocument extends MongooseDocument {
   _id: Types.ObjectId;
   userId: Types.ObjectId;
@@ -28,6 +40,8 @@ export interface DocumentDocument extends MongooseDocument {
   mimeType: AllowedMimeType;
   sizeBytes: number;
   status: DocumentStatus;
+  activeVersionId?: string;
+  versions: DocumentVersionSubdocument[];
   errorMessage?: string;
   metadata: DocumentMetadataSubdocument;
   isDeleted: boolean;
@@ -143,6 +157,63 @@ const DocumentSchema = new Schema<DocumentDocument>(
     isDeleted: {
       type: Boolean,
       default: false,
+    },
+    activeVersionId: {
+      type: String,
+      trim: true,
+    },
+    versions: {
+      type: [
+        new Schema(
+          {
+            versionId: {
+              type: String,
+              required: true,
+              trim: true,
+            },
+            versionNumber: {
+              type: Number,
+              required: true,
+              min: 1,
+            },
+            originalFilename: {
+              type: String,
+              required: true,
+              trim: true,
+            },
+            storageUri: {
+              type: String,
+              required: true,
+              trim: true,
+            },
+            mimeType: {
+              type: String,
+              required: true,
+              enum: ALLOWED_MIME_TYPES,
+            },
+            sizeBytes: {
+              type: Number,
+              required: true,
+              min: 0,
+            },
+            status: {
+              type: String,
+              enum: Object.values(DocumentStatus),
+              default: DocumentStatus.PENDING,
+            },
+            metadata: {
+              type: DocumentMetadataSchema,
+              default: () => ({ language: 'en' }),
+            },
+            uploadedAt: {
+              type: Date,
+              default: Date.now,
+            },
+          },
+          { _id: false },
+        ),
+      ],
+      default: [],
     },
   },
   {

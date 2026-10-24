@@ -21,6 +21,18 @@ export interface DocumentMetadata {
   [key: string]: unknown;
 }
 
+export interface DocumentVersion {
+  versionId: string;
+  versionNumber: number;
+  originalFilename: string;
+  storageUri: string;
+  mimeType: AllowedMimeType;
+  sizeBytes: number;
+  status?: DocumentStatus;
+  metadata?: Partial<DocumentMetadata>;
+  uploadedAt: Date;
+}
+
 export interface DocumentProperties {
   id?: string;
   userId: string;
@@ -30,6 +42,8 @@ export interface DocumentProperties {
   mimeType: AllowedMimeType | string;
   sizeBytes: number;
   status?: DocumentStatus;
+  activeVersionId?: string;
+  versions?: DocumentVersion[];
   errorMessage?: string;
   metadata?: Partial<DocumentMetadata>;
   isDeleted?: boolean;
@@ -50,6 +64,8 @@ export class Document {
   private readonly _mimeType: AllowedMimeType;
   private readonly _sizeBytes: number;
   private _status: DocumentStatus;
+  private _activeVersionId?: string;
+  private _versions: DocumentVersion[];
   private _errorMessage?: string;
   private _metadata: DocumentMetadata;
   private _isDeleted: boolean;
@@ -113,6 +129,29 @@ export class Document {
       }
     }
 
+    // Initialize versions history
+    const initialVersionId = props.activeVersionId || `v1-${Date.now()}`;
+    if (props.versions && props.versions.length > 0) {
+      this._versions = [...props.versions];
+      this._activeVersionId =
+        props.activeVersionId || this._versions[this._versions.length - 1].versionId;
+    } else {
+      this._activeVersionId = initialVersionId;
+      this._versions = [
+        {
+          versionId: initialVersionId,
+          versionNumber: 1,
+          originalFilename: this._originalFilename,
+          storageUri: this._storageUri,
+          mimeType: this._mimeType,
+          sizeBytes: this._sizeBytes,
+          status: this._status,
+          metadata: { ...this._metadata },
+          uploadedAt: props.createdAt ?? new Date(),
+        },
+      ];
+    }
+
     this._isDeleted = props.isDeleted ?? false;
     this._createdAt = props.createdAt ?? new Date();
     this._updatedAt = props.updatedAt ?? new Date();
@@ -149,6 +188,48 @@ export class Document {
 
   public get status(): DocumentStatus {
     return this._status;
+  }
+
+  public get activeVersionId(): string | undefined {
+    return this._activeVersionId;
+  }
+
+  public get versions(): ReadonlyArray<DocumentVersion> {
+    return this._versions;
+  }
+
+  public get activeVersion(): DocumentVersion | undefined {
+    return (
+      this._versions.find((v) => v.versionId === this._activeVersionId) ||
+      this._versions[this._versions.length - 1]
+    );
+  }
+
+  public addVersion(version: DocumentVersion): void {
+    this._versions.push(version);
+    this._activeVersionId = version.versionId;
+    this._storageUri = version.storageUri;
+    this._originalFilename = version.originalFilename;
+    this._mimeType = version.mimeType;
+    this._sizeBytes = version.sizeBytes;
+    this._status = DocumentStatus.PENDING;
+    this._updatedAt = new Date();
+  }
+
+  public restoreVersion(versionId: string): void {
+    const target = this._versions.find((v) => v.versionId === versionId);
+    if (!target) {
+      throw new Error(`Version with ID "${versionId}" not found in document.`);
+    }
+    this._activeVersionId = target.versionId;
+    this._storageUri = target.storageUri;
+    this._originalFilename = target.originalFilename;
+    this._mimeType = target.mimeType;
+    this._sizeBytes = target.sizeBytes;
+    if (target.metadata) {
+      this._metadata = { ...this._metadata, ...target.metadata };
+    }
+    this._updatedAt = new Date();
   }
 
   public get errorMessage(): string | undefined {

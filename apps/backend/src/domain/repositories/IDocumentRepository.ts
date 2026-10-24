@@ -1,4 +1,4 @@
-import { Document } from '../entities/Document';
+import { Document, DocumentVersion } from '../entities/Document';
 
 export interface PaginatedDocuments {
   data: Document[];
@@ -79,4 +79,18 @@ export interface IDocumentRepository {
     userId: string,
     includeDeleted?: boolean,
   ): Promise<boolean>;
+
+  /**
+   * Appends a new version to the document's history and updates active version pointer.
+   */
+  addVersion(
+    documentId: string,
+    userId: string,
+    version: DocumentVersion,
+  ): Promise<Document | null>;
+
+  /**
+   * Reverts active version pointer to an existing historical version.
+   */
+  restoreVersion(documentId: string, userId: string, versionId: string): Promise<Document | null>;
 }
