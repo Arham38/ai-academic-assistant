@@ -157,4 +157,58 @@ describe('<Sidebar /> Role-Aware Navigation', () => {
 
     expect(mockItemClick).toHaveBeenCalledTimes(1);
   });
+
+  it('should only highlight Student Hub (not Dashboard) when current location is /dashboard/student', () => {
+    const store = createMockStore({
+      user: { id: 'usr_student', email: 'student@mit.edu', role: 'STUDENT' },
+    });
+
+    render(
+      <Provider store={store}>
+        <MemoryRouter initialEntries={['/dashboard/student']}>
+          <Sidebar
+            isCollapsed={false}
+            onToggleCollapse={mockToggleCollapse}
+            onItemClick={mockItemClick}
+          />
+        </MemoryRouter>
+      </Provider>,
+    );
+
+    const studentHubLink = screen.getByText('Student Hub').closest('a');
+    const dashboardLink = screen.getByText('Dashboard').closest('a');
+
+    expect(studentHubLink).toHaveClass('bg-indigo-50');
+    expect(studentHubLink).toHaveClass('text-indigo-700');
+
+    expect(dashboardLink).not.toHaveClass('bg-indigo-50');
+    expect(dashboardLink).toHaveClass('text-slate-600');
+  });
+
+  it('should only highlight Dashboard when current location is /dashboard', () => {
+    const store = createMockStore({
+      user: { id: 'usr_student', email: 'student@mit.edu', role: 'STUDENT' },
+    });
+
+    render(
+      <Provider store={store}>
+        <MemoryRouter initialEntries={['/dashboard']}>
+          <Sidebar
+            isCollapsed={false}
+            onToggleCollapse={mockToggleCollapse}
+            onItemClick={mockItemClick}
+          />
+        </MemoryRouter>
+      </Provider>,
+    );
+
+    const dashboardLink = screen.getByText('Dashboard').closest('a');
+    const studentHubLink = screen.getByText('Student Hub').closest('a');
+
+    expect(dashboardLink).toHaveClass('bg-indigo-50');
+    expect(dashboardLink).toHaveClass('text-indigo-700');
+
+    expect(studentHubLink).not.toHaveClass('bg-indigo-50');
+    expect(studentHubLink).toHaveClass('text-slate-600');
+  });
 });

@@ -26,4 +26,6 @@ if (typeof window !== 'undefined') {
   if (!window.cancelAnimationFrame) {
     window.cancelAnimationFrame = (id: number) => clearTimeout(id);
   }
+  globalThis.requestAnimationFrame = window.requestAnimationFrame;
+  globalThis.cancelAnimationFrame = window.cancelAnimationFrame;
 }

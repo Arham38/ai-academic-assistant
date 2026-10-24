@@ -16,6 +16,7 @@ export interface NavigationItem {
   roles: UserRole[];
   badge?: string;
   description?: string;
+  end?: boolean;
 }
 
 /**
@@ -29,6 +30,7 @@ export const navigationConfig: NavigationItem[] = [
     icon: LayoutDashboard,
     roles: ['STUDENT', 'RESEARCHER', 'ADMIN'],
     description: 'Central academic operations hub and summary metrics',
+    end: true,
   },
   {
     name: 'My Documents',
@@ -43,6 +45,7 @@ export const navigationConfig: NavigationItem[] = [
     icon: GraduationCap,
     roles: ['STUDENT', 'RESEARCHER', 'ADMIN'],
     description: 'Course assignments, originality checker, and citation tools',
+    end: true,
   },
   {
     name: 'Researcher Hub',
@@ -51,6 +54,7 @@ export const navigationConfig: NavigationItem[] = [
     roles: ['RESEARCHER', 'ADMIN'],
     badge: 'Pro',
     description: 'Multi-document Agentic RAG and ChromaDB vector clusters',
+    end: true,
   },
   {
     name: 'Admin Panel',
