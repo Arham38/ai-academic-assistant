@@ -133,3 +133,19 @@ def test_docx_parser_strategy_interface():
         assert page_count is None
         assert "Strategy Pattern Test Paragraph." in text
         assert word_count == 4
+
+
+def test_docx_fixture_file_extraction():
+    """Verify extraction against static fixture file in tests/fixtures directory."""
+    fixture_path = os.path.join(
+        os.path.dirname(__file__), "fixtures", "sample_academic_paper.docx"
+    )
+    assert os.path.isfile(fixture_path)
+
+    parser = DocxParser()
+    text, page_count, word_count = parser.extract(fixture_path)
+
+    assert page_count is None
+    assert "Academic Research Paper Fixture" in text
+    assert "FastAPI Microservice | Operational" in text
+    assert word_count > 10

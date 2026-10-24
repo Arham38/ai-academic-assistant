@@ -1,9 +1,10 @@
-"""Unit tests for DocumentProcessingService orchestrator and path traversal defenses."""
+"""Unit tests for DocumentProcessingService orchestrator, polymorphic routing, and defenses."""
 
 import os
 import tempfile
 from unittest.mock import AsyncMock, MagicMock, patch
 
+import docx
 import pymupdf
 import pytest
 from bson import ObjectId
@@ -12,6 +13,7 @@ from src.core.exceptions import (
     PathTraversalSecurityError,
 )
 from src.services.document_processing_service import (
+    PARSER_REGISTRY,
     DocumentProcessingService,
     resolve_safe_filepath,
 )
@@ -56,10 +58,7 @@ async def test_process_document_not_found_in_db():
     mock_collection = MagicMock()
     mock_db.documents = mock_collection
 
-    # update_one returns matched_count = 0
-    mock_result = MagicMock()
-    mock_result.matched_count = 0
-    mock_collection.update_one = AsyncMock(return_value=mock_result)
+    mock_collection.find_one_and_update = AsyncMock(return_value=None)
 
     service = DocumentProcessingService(db=mock_db)
     valid_id = str(ObjectId())
@@ -69,15 +68,21 @@ async def test_process_document_not_found_in_db():
 
 
 @pytest.mark.asyncio
-async def test_process_document_success():
-    """Verify happy path updates status from PENDING to PARSING and finally to EMBEDDING."""
+async def test_process_pdf_document_success():
+    """Verify PDF processing routes to PDFParser, populating pageCount and wordCount."""
     mock_db = MagicMock()
     mock_collection = MagicMock()
     mock_db.documents = mock_collection
 
-    mock_result = MagicMock()
-    mock_result.matched_count = 1
-    mock_collection.update_one = AsyncMock(return_value=mock_result)
+    doc_id = str(ObjectId())
+    mock_collection.find_one_and_update = AsyncMock(
+        return_value={
+            "_id": ObjectId(doc_id),
+            "mimeType": "application/pdf",
+            "status": "PARSING",
+        }
+    )
+    mock_collection.update_one = AsyncMock(return_value=MagicMock(matched_count=1))
 
     with tempfile.TemporaryDirectory() as tmp_dir:
         # Create a real small PDF
@@ -91,7 +96,6 @@ async def test_process_document_success():
         doc.close()
 
         service = DocumentProcessingService(db=mock_db)
-        doc_id = str(ObjectId())
 
         with patch(
             "src.services.document_processing_service.settings"
@@ -99,45 +103,127 @@ async def test_process_document_success():
             mock_settings.UPLOAD_DIR = tmp_dir
             await service.process_document(doc_id, "/uploads/academic_test.pdf")
 
-    # Verify updates were called
-    assert mock_collection.update_one.call_count == 2
+    # Verify find_one_and_update was called to set PARSING
+    mock_collection.find_one_and_update.assert_awaited_once()
 
-    # First update: PARSING
-    first_call_args = mock_collection.update_one.call_args_list[0]
-    assert first_call_args[0][0] == {"_id": ObjectId(doc_id)}
-    assert first_call_args[0][1]["$set"]["status"] == "PARSING"
-
-    # Second update: EMBEDDING with metadata
-    second_call_args = mock_collection.update_one.call_args_list[1]
-    assert second_call_args[0][0] == {"_id": ObjectId(doc_id)}
-    assert second_call_args[0][1]["$set"]["status"] == "EMBEDDING"
-    assert second_call_args[0][1]["$set"]["metadata.pageCount"] == 1
-    assert second_call_args[0][1]["$set"]["metadata.wordCount"] > 0
+    # Verify update_one was called to set EMBEDDING with metadata
+    mock_collection.update_one.assert_awaited_once()
+    call_args = mock_collection.update_one.call_args[0]
+    assert call_args[0] == {"_id": ObjectId(doc_id)}
+    assert call_args[1]["$set"]["status"] == "EMBEDDING"
+    assert call_args[1]["$set"]["metadata.pageCount"] == 1
+    assert call_args[1]["$set"]["metadata.wordCount"] > 0
 
 
 @pytest.mark.asyncio
-async def test_process_document_failure_transitions_to_failed():
-    """Verify extraction failure transitions document status to FAILED with errorMessage."""
+async def test_process_docx_document_success():
+    """Verify DOCX processing routes to DocxParser, populating wordCount and unsetting pageCount."""
     mock_db = MagicMock()
     mock_collection = MagicMock()
     mock_db.documents = mock_collection
 
-    mock_result = MagicMock()
-    mock_result.matched_count = 1
-    mock_collection.update_one = AsyncMock(return_value=mock_result)
+    doc_id = str(ObjectId())
+    mock_collection.find_one_and_update = AsyncMock(
+        return_value={
+            "_id": ObjectId(doc_id),
+            "mimeType": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+            "status": "PARSING",
+        }
+    )
+    mock_collection.update_one = AsyncMock(return_value=MagicMock(matched_count=1))
+
+    with tempfile.TemporaryDirectory() as tmp_dir:
+        # Create a real small DOCX
+        docx_path = os.path.join(tmp_dir, "thesis_draft.docx")
+        doc = docx.Document()
+        doc.add_paragraph("Chapter 1: Neural Networks in Modern Education")
+        table = doc.add_table(rows=1, cols=2)
+        table.rows[0].cells[0].text = "Metric"
+        table.rows[0].cells[1].text = "Value"
+        doc.save(docx_path)
+
+        service = DocumentProcessingService(db=mock_db)
+
+        with patch(
+            "src.services.document_processing_service.settings"
+        ) as mock_settings:
+            mock_settings.UPLOAD_DIR = tmp_dir
+            await service.process_document(doc_id, "/uploads/thesis_draft.docx")
+
+    # Verify update_one set EMBEDDING and unset pageCount
+    mock_collection.update_one.assert_awaited_once()
+    call_args = mock_collection.update_one.call_args[0]
+    assert call_args[1]["$set"]["status"] == "EMBEDDING"
+    assert call_args[1]["$set"]["metadata.wordCount"] > 5
+    assert "metadata.pageCount" not in call_args[1]["$set"]
+    assert call_args[1]["$unset"]["metadata.pageCount"] == ""
+
+
+@pytest.mark.asyncio
+async def test_process_document_unsupported_mime_type():
+    """Verify unsupported MIME type transitions document status to FAILED."""
+    mock_db = MagicMock()
+    mock_collection = MagicMock()
+    mock_db.documents = mock_collection
+
+    doc_id = str(ObjectId())
+    mock_collection.find_one_and_update = AsyncMock(
+        return_value={
+            "_id": ObjectId(doc_id),
+            "mimeType": "image/png",
+            "status": "PARSING",
+        }
+    )
+    mock_collection.update_one = AsyncMock(return_value=MagicMock(matched_count=1))
 
     service = DocumentProcessingService(db=mock_db)
+
+    with patch("src.services.document_processing_service.settings") as mock_settings:
+        mock_settings.UPLOAD_DIR = "test_uploads"
+        await service.process_document(doc_id, "/uploads/unsupported.png")
+
+    mock_collection.update_one.assert_awaited_once()
+    call_args = mock_collection.update_one.call_args[0]
+    assert call_args[1]["$set"]["status"] == "FAILED"
+    assert "unsupported" in call_args[1]["$set"]["errorMessage"].lower()
+
+
+@pytest.mark.asyncio
+async def test_process_document_failure_transitions_to_failed():
+    """Verify extraction failure (missing file) transitions document status to FAILED."""
+    mock_db = MagicMock()
+    mock_collection = MagicMock()
+    mock_db.documents = mock_collection
+
     doc_id = str(ObjectId())
+    mock_collection.find_one_and_update = AsyncMock(
+        return_value={
+            "_id": ObjectId(doc_id),
+            "mimeType": "application/pdf",
+            "status": "PARSING",
+        }
+    )
+    mock_collection.update_one = AsyncMock(return_value=MagicMock(matched_count=1))
+
+    service = DocumentProcessingService(db=mock_db)
 
     # Point to a non-existent file to simulate failure
     with patch("src.services.document_processing_service.settings") as mock_settings:
         mock_settings.UPLOAD_DIR = "/fake/uploads"
         await service.process_document(doc_id, "/uploads/non_existent.pdf")
 
-    # Verify status was updated to PARSING then FAILED
-    assert mock_collection.update_one.call_count == 2
+    mock_collection.update_one.assert_awaited_once()
+    call_args = mock_collection.update_one.call_args[0]
+    assert call_args[1]["$set"]["status"] == "FAILED"
+    assert "errorMessage" in call_args[1]["$set"]
+    assert "not found" in call_args[1]["$set"]["errorMessage"].lower()
 
-    second_call_args = mock_collection.update_one.call_args_list[1]
-    assert second_call_args[0][1]["$set"]["status"] == "FAILED"
-    assert "errorMessage" in second_call_args[0][1]["$set"]
-    assert "not found" in second_call_args[0][1]["$set"]["errorMessage"].lower()
+
+def test_parser_registry_contains_supported_mimes():
+    """Verify PARSER_REGISTRY contains PDF, DOCX, and TXT strategies."""
+    assert "application/pdf" in PARSER_REGISTRY
+    assert (
+        "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+        in PARSER_REGISTRY
+    )
+    assert "text/plain" in PARSER_REGISTRY
