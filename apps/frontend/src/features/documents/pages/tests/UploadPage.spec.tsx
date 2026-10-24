@@ -1,4 +1,3 @@
-import React from 'react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
@@ -45,7 +44,7 @@ describe('<UploadPage /> Integration Suite', () => {
     vi.clearAllMocks();
     mockUploadDocument = vi.fn();
     vi.spyOn(documentApiSliceModule, 'useUploadDocumentMutation').mockReturnValue([
-      mockUploadDocument,
+      mockUploadDocument as unknown as MutationHookResult[0],
       { isLoading: false, reset: vi.fn() } as unknown as MutationHookResult[1],
     ]);
   });

@@ -1,4 +1,5 @@
 import axios, { AxiosProgressEvent, isCancel } from 'axios';
+import type { FetchBaseQueryError } from '@reduxjs/toolkit/query';
 import { baseApi } from '../api/baseApi';
 import type { RootState } from '../../app/rootReducer';
 
@@ -90,8 +91,9 @@ export const documentApiSlice = baseApi.injectEndpoints({
             return {
               error: {
                 status: 'CUSTOM_ERROR',
+                error: 'Upload was aborted by user.',
                 data: { detail: 'Upload was aborted by user.' },
-              },
+              } as FetchBaseQueryError,
             };
           }
 
@@ -100,7 +102,7 @@ export const documentApiSlice = baseApi.injectEndpoints({
               error: {
                 status: axiosError.response?.status || 500,
                 data: axiosError.response?.data || { detail: axiosError.message },
-              },
+              } as FetchBaseQueryError,
             };
           }
 
@@ -110,7 +112,7 @@ export const documentApiSlice = baseApi.injectEndpoints({
               data: {
                 detail: (axiosError as Error)?.message || 'An unexpected upload error occurred.',
               },
-            },
+            } as FetchBaseQueryError,
           };
         }
       },
