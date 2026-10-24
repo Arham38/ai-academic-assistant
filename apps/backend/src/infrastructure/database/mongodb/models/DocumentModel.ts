@@ -12,6 +12,10 @@ export interface DocumentMetadataSubdocument {
   course?: string;
   professor?: string;
   bibliographyStyle?: string;
+  title_extracted?: string;
+  authors?: string[];
+  abstract?: string;
+  keywords?: string[];
   [key: string]: unknown;
 }
 
@@ -59,6 +63,22 @@ const DocumentMetadataSchema = new Schema(
     bibliographyStyle: {
       type: String,
       trim: true,
+    },
+    title_extracted: {
+      type: String,
+      trim: true,
+    },
+    authors: {
+      type: [String],
+      default: undefined,
+    },
+    abstract: {
+      type: String,
+      trim: true,
+    },
+    keywords: {
+      type: [String],
+      default: undefined,
     },
   },
   {

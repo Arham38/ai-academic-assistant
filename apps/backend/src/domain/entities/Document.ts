@@ -14,6 +14,10 @@ export interface DocumentMetadata {
   course?: string;
   professor?: string;
   bibliographyStyle?: string;
+  title_extracted?: string;
+  authors?: string[];
+  abstract?: string;
+  keywords?: string[];
   [key: string]: unknown;
 }
 
@@ -90,6 +94,10 @@ export class Document {
       course: props.metadata?.course,
       professor: props.metadata?.professor,
       bibliographyStyle: props.metadata?.bibliographyStyle,
+      title_extracted: props.metadata?.title_extracted,
+      authors: props.metadata?.authors,
+      abstract: props.metadata?.abstract,
+      keywords: props.metadata?.keywords,
       ...props.metadata,
     };
 
