@@ -100,12 +100,12 @@ export const PasswordForm: React.FC = () => {
       <div>
         <label
           htmlFor="currentPassword"
-          className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1.5"
+          className="block text-xs font-semibold text-foreground uppercase tracking-wider mb-1.5"
         >
           Current Password
         </label>
         <div className="relative rounded-lg shadow-2xs">
-          <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
+          <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-muted-foreground">
             <Lock className="w-4 h-4" />
           </div>
           <input
@@ -116,17 +116,17 @@ export const PasswordForm: React.FC = () => {
             {...register('currentPassword')}
             aria-invalid={!!errors.currentPassword}
             aria-describedby={errors.currentPassword ? 'current-password-error' : undefined}
-            className={`block w-full pl-10 pr-10 py-2.5 text-sm rounded-lg border bg-white text-slate-900 placeholder:text-slate-400 focus:outline-hidden focus:ring-2 transition-colors ${
+            className={`block w-full pl-10 pr-10 py-2.5 text-sm rounded-lg border bg-background text-foreground placeholder:text-muted-foreground focus:outline-hidden focus:ring-2 transition-colors ${
               errors.currentPassword
                 ? 'border-red-300 focus:border-red-500 focus:ring-red-200'
-                : 'border-slate-300 focus:border-indigo-500 focus:ring-indigo-100'
+                : 'border-input focus:border-indigo-500 focus:ring-indigo-100 dark:focus:ring-indigo-950'
             }`}
           />
           <button
             type="button"
             onClick={() => setShowCurrentPassword(!showCurrentPassword)}
             aria-label={showCurrentPassword ? 'Hide current password' : 'Show current password'}
-            className="absolute inset-y-0 right-0 pr-3.5 flex items-center text-slate-400 hover:text-slate-600 focus:outline-hidden"
+            className="absolute inset-y-0 right-0 pr-3.5 flex items-center text-muted-foreground hover:text-foreground focus:outline-hidden"
           >
             {showCurrentPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
           </button>
@@ -142,12 +142,12 @@ export const PasswordForm: React.FC = () => {
       <div>
         <label
           htmlFor="newPassword"
-          className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1.5"
+          className="block text-xs font-semibold text-foreground uppercase tracking-wider mb-1.5"
         >
           New Password
         </label>
         <div className="relative rounded-lg shadow-2xs">
-          <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
+          <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-muted-foreground">
             <Lock className="w-4 h-4" />
           </div>
           <input
@@ -158,17 +158,17 @@ export const PasswordForm: React.FC = () => {
             {...register('newPassword')}
             aria-invalid={!!errors.newPassword}
             aria-describedby={errors.newPassword ? 'new-password-error' : undefined}
-            className={`block w-full pl-10 pr-10 py-2.5 text-sm rounded-lg border bg-white text-slate-900 placeholder:text-slate-400 focus:outline-hidden focus:ring-2 transition-colors ${
+            className={`block w-full pl-10 pr-10 py-2.5 text-sm rounded-lg border bg-background text-foreground placeholder:text-muted-foreground focus:outline-hidden focus:ring-2 transition-colors ${
               errors.newPassword
                 ? 'border-red-300 focus:border-red-500 focus:ring-red-200'
-                : 'border-slate-300 focus:border-indigo-500 focus:ring-indigo-100'
+                : 'border-input focus:border-indigo-500 focus:ring-indigo-100 dark:focus:ring-indigo-950'
             }`}
           />
           <button
             type="button"
             onClick={() => setShowNewPassword(!showNewPassword)}
             aria-label={showNewPassword ? 'Hide new password' : 'Show new password'}
-            className="absolute inset-y-0 right-0 pr-3.5 flex items-center text-slate-400 hover:text-slate-600 focus:outline-hidden"
+            className="absolute inset-y-0 right-0 pr-3.5 flex items-center text-muted-foreground hover:text-foreground focus:outline-hidden"
           >
             {showNewPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
           </button>
@@ -197,12 +197,12 @@ export const PasswordForm: React.FC = () => {
       <div>
         <label
           htmlFor="confirmNewPassword"
-          className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1.5"
+          className="block text-xs font-semibold text-foreground uppercase tracking-wider mb-1.5"
         >
           Confirm New Password
         </label>
         <div className="relative rounded-lg shadow-2xs">
-          <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
+          <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-muted-foreground">
             <Lock className="w-4 h-4" />
           </div>
           <input
@@ -213,17 +213,17 @@ export const PasswordForm: React.FC = () => {
             {...register('confirmNewPassword')}
             aria-invalid={!!errors.confirmNewPassword}
             aria-describedby={errors.confirmNewPassword ? 'confirm-new-password-error' : undefined}
-            className={`block w-full pl-10 pr-10 py-2.5 text-sm rounded-lg border bg-white text-slate-900 placeholder:text-slate-400 focus:outline-hidden focus:ring-2 transition-colors ${
+            className={`block w-full pl-10 pr-10 py-2.5 text-sm rounded-lg border bg-background text-foreground placeholder:text-muted-foreground focus:outline-hidden focus:ring-2 transition-colors ${
               errors.confirmNewPassword
                 ? 'border-red-300 focus:border-red-500 focus:ring-red-200'
-                : 'border-slate-300 focus:border-indigo-500 focus:ring-indigo-100'
+                : 'border-input focus:border-indigo-500 focus:ring-indigo-100 dark:focus:ring-indigo-950'
             }`}
           />
           <button
             type="button"
             onClick={() => setShowConfirmPassword(!showConfirmPassword)}
             aria-label={showConfirmPassword ? 'Hide confirm password' : 'Show confirm password'}
-            className="absolute inset-y-0 right-0 pr-3.5 flex items-center text-slate-400 hover:text-slate-600 focus:outline-hidden"
+            className="absolute inset-y-0 right-0 pr-3.5 flex items-center text-muted-foreground hover:text-foreground focus:outline-hidden"
           >
             {showConfirmPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
           </button>

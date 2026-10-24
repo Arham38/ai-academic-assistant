@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { Settings, LogOut, ChevronDown, Shield, Loader2, CheckCircle2 } from 'lucide-react';
 import { useAuth } from '../../features/auth/hooks/useAuth';
 import { useLogoutMutation } from '../../features/auth/authApiSlice';
+import { formatUserDisplayName, formatUserInitials } from '../../utils/userUtils';
 
 export const UserDropdown: React.FC = () => {
   const { user, role, isAdmin, isResearcher } = useAuth();
@@ -45,23 +46,8 @@ export const UserDropdown: React.FC = () => {
     }
   };
 
-  // Derive display initials
-  const getInitials = (): string => {
-    if (user?.firstName && user?.lastName) {
-      return `${user.firstName[0]}${user.lastName[0]}`.toUpperCase();
-    }
-    if (user?.firstName) {
-      return user.firstName.slice(0, 2).toUpperCase();
-    }
-    if (user?.email) {
-      return user.email.slice(0, 2).toUpperCase();
-    }
-    return 'AA';
-  };
-
-  const displayName = user?.firstName
-    ? `${user.firstName} ${user.lastName ?? ''}`.trim()
-    : (user?.email ?? 'Scholar');
+  const displayName = formatUserDisplayName(user);
+  const userInitials = formatUserInitials(user);
 
   const getRoleBadgeClasses = () => {
     switch (role) {
@@ -87,7 +73,7 @@ export const UserDropdown: React.FC = () => {
         className="flex items-center space-x-3 p-1.5 rounded-xl hover:bg-slate-100 transition-colors focus:outline-hidden focus:ring-2 focus:ring-indigo-500/20"
       >
         <div className="w-9 h-9 rounded-xl bg-indigo-600 text-white flex items-center justify-center font-bold text-xs shadow-xs shrink-0">
-          {getInitials()}
+          {userInitials}
         </div>
 
         <div className="hidden sm:flex flex-col items-start text-left min-w-0 max-w-[140px]">

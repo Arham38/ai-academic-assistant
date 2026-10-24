@@ -91,12 +91,12 @@ export const ProfileForm: React.FC = () => {
         <div>
           <label
             htmlFor="profile-email-readonly"
-            className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1.5"
+            className="block text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1.5"
           >
             Institutional Email (Immutable)
           </label>
           <div className="relative rounded-lg shadow-2xs">
-            <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
+            <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-muted-foreground">
               <Mail className="w-4 h-4" />
             </div>
             <input
@@ -105,7 +105,7 @@ export const ProfileForm: React.FC = () => {
               readOnly
               disabled
               value={currentUser?.email || ''}
-              className="block w-full pl-10 pr-3.5 py-2.5 text-sm rounded-lg border border-slate-200 bg-slate-100 text-slate-500 cursor-not-allowed"
+              className="block w-full pl-10 pr-3.5 py-2.5 text-sm rounded-lg border border-border bg-muted/60 text-muted-foreground cursor-not-allowed"
             />
           </div>
         </div>
@@ -113,12 +113,12 @@ export const ProfileForm: React.FC = () => {
         <div>
           <label
             htmlFor="profile-role-readonly"
-            className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1.5"
+            className="block text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1.5"
           >
             System Role (Managed by Admin)
           </label>
           <div className="relative rounded-lg shadow-2xs">
-            <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
+            <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-muted-foreground">
               <Shield className="w-4 h-4" />
             </div>
             <input
@@ -127,7 +127,7 @@ export const ProfileForm: React.FC = () => {
               readOnly
               disabled
               value={role || 'STUDENT'}
-              className="block w-full pl-10 pr-3.5 py-2.5 text-sm rounded-lg border border-slate-200 bg-slate-100 text-slate-500 cursor-not-allowed"
+              className="block w-full pl-10 pr-3.5 py-2.5 text-sm rounded-lg border border-border bg-muted/60 text-muted-foreground cursor-not-allowed"
             />
           </div>
         </div>
@@ -138,12 +138,12 @@ export const ProfileForm: React.FC = () => {
         <div>
           <label
             htmlFor="profile-firstName"
-            className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1.5"
+            className="block text-xs font-semibold text-foreground uppercase tracking-wider mb-1.5"
           >
             First Name
           </label>
           <div className="relative rounded-lg shadow-2xs">
-            <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
+            <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-muted-foreground">
               <User className="w-4 h-4" />
             </div>
             <input
@@ -153,10 +153,10 @@ export const ProfileForm: React.FC = () => {
               {...register('firstName')}
               aria-invalid={!!errors.firstName}
               aria-describedby={errors.firstName ? 'profile-firstName-error' : undefined}
-              className={`block w-full pl-10 pr-3.5 py-2.5 text-sm rounded-lg border bg-white text-slate-900 placeholder:text-slate-400 focus:outline-hidden focus:ring-2 transition-colors ${
+              className={`block w-full pl-10 pr-3.5 py-2.5 text-sm rounded-lg border bg-background text-foreground placeholder:text-muted-foreground focus:outline-hidden focus:ring-2 transition-colors ${
                 errors.firstName
                   ? 'border-red-300 focus:border-red-500 focus:ring-red-200'
-                  : 'border-slate-300 focus:border-indigo-500 focus:ring-indigo-100'
+                  : 'border-input focus:border-indigo-500 focus:ring-indigo-100 dark:focus:ring-indigo-950'
               }`}
             />
           </div>
@@ -170,12 +170,12 @@ export const ProfileForm: React.FC = () => {
         <div>
           <label
             htmlFor="profile-lastName"
-            className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1.5"
+            className="block text-xs font-semibold text-foreground uppercase tracking-wider mb-1.5"
           >
             Last Name
           </label>
           <div className="relative rounded-lg shadow-2xs">
-            <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
+            <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-muted-foreground">
               <User className="w-4 h-4" />
             </div>
             <input
@@ -185,10 +185,10 @@ export const ProfileForm: React.FC = () => {
               {...register('lastName')}
               aria-invalid={!!errors.lastName}
               aria-describedby={errors.lastName ? 'profile-lastName-error' : undefined}
-              className={`block w-full pl-10 pr-3.5 py-2.5 text-sm rounded-lg border bg-white text-slate-900 placeholder:text-slate-400 focus:outline-hidden focus:ring-2 transition-colors ${
+              className={`block w-full pl-10 pr-3.5 py-2.5 text-sm rounded-lg border bg-background text-foreground placeholder:text-muted-foreground focus:outline-hidden focus:ring-2 transition-colors ${
                 errors.lastName
                   ? 'border-red-300 focus:border-red-500 focus:ring-red-200'
-                  : 'border-slate-300 focus:border-indigo-500 focus:ring-indigo-100'
+                  : 'border-input focus:border-indigo-500 focus:ring-indigo-100 dark:focus:ring-indigo-950'
               }`}
             />
           </div>

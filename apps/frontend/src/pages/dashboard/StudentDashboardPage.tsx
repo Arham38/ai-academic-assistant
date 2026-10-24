@@ -9,13 +9,12 @@ import {
   ShieldCheck,
 } from 'lucide-react';
 import { useAuth } from '../../features/auth/hooks/useAuth';
+import { formatUserDisplayName } from '../../utils/userUtils';
 
 export const StudentDashboardPage: React.FC = () => {
   const { user } = useAuth();
 
-  const studentName = user?.firstName
-    ? `${user.firstName} ${user.lastName ?? ''}`.trim()
-    : (user?.email ?? 'Student Scholar');
+  const studentName = formatUserDisplayName(user);
 
   const recentScans = [
     {
@@ -66,49 +65,51 @@ export const StudentDashboardPage: React.FC = () => {
 
       {/* Feature Action Cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-2xs hover:shadow-md transition-shadow group flex flex-col justify-between">
+        <div className="bg-card rounded-2xl border border-border p-6 shadow-2xs hover:shadow-md transition-shadow group flex flex-col justify-between">
           <div>
-            <div className="w-12 h-12 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center mb-4 group-hover:bg-indigo-600 group-hover:text-white transition-colors">
+            <div className="w-12 h-12 rounded-xl bg-indigo-50 dark:bg-indigo-950/50 text-indigo-600 dark:text-indigo-400 flex items-center justify-center mb-4 group-hover:bg-indigo-600 group-hover:text-white transition-colors">
               <FileCheck2 className="w-6 h-6" />
             </div>
-            <h2 className="text-base font-bold text-slate-900 mb-1">Plagiarism & Integrity Scan</h2>
-            <p className="text-xs text-slate-500 leading-relaxed">
+            <h2 className="text-base font-bold text-foreground mb-1">
+              Plagiarism & Integrity Scan
+            </h2>
+            <p className="text-xs text-muted-foreground leading-relaxed">
               Scan manuscripts against 10M+ academic repositories and peer-reviewed journals.
             </p>
           </div>
-          <div className="mt-5 pt-4 border-t border-slate-100 flex items-center justify-between text-xs font-semibold text-indigo-600">
+          <div className="mt-5 pt-4 border-t border-border flex items-center justify-between text-xs font-semibold text-indigo-600 dark:text-indigo-400">
             <span>New Scan</span>
             <ArrowUpRight className="w-4 h-4" />
           </div>
         </div>
 
-        <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-2xs hover:shadow-md transition-shadow group flex flex-col justify-between">
+        <div className="bg-card rounded-2xl border border-border p-6 shadow-2xs hover:shadow-md transition-shadow group flex flex-col justify-between">
           <div>
-            <div className="w-12 h-12 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center mb-4 group-hover:bg-emerald-600 group-hover:text-white transition-colors">
+            <div className="w-12 h-12 rounded-xl bg-emerald-50 dark:bg-emerald-950/50 text-emerald-600 dark:text-emerald-400 flex items-center justify-center mb-4 group-hover:bg-emerald-600 group-hover:text-white transition-colors">
               <BookOpen className="w-6 h-6" />
             </div>
-            <h2 className="text-base font-bold text-slate-900 mb-1">Citation & Reference Check</h2>
-            <p className="text-xs text-slate-500 leading-relaxed">
+            <h2 className="text-base font-bold text-foreground mb-1">Citation & Reference Check</h2>
+            <p className="text-xs text-muted-foreground leading-relaxed">
               Automatically validate IEEE, APA, MLA, and Chicago format references.
             </p>
           </div>
-          <div className="mt-5 pt-4 border-t border-slate-100 flex items-center justify-between text-xs font-semibold text-emerald-600">
+          <div className="mt-5 pt-4 border-t border-border flex items-center justify-between text-xs font-semibold text-emerald-600 dark:text-emerald-400">
             <span>Check Citations</span>
             <ArrowUpRight className="w-4 h-4" />
           </div>
         </div>
 
-        <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-2xs hover:shadow-md transition-shadow group flex flex-col justify-between">
+        <div className="bg-card rounded-2xl border border-border p-6 shadow-2xs hover:shadow-md transition-shadow group flex flex-col justify-between">
           <div>
-            <div className="w-12 h-12 rounded-xl bg-purple-50 text-purple-600 flex items-center justify-center mb-4 group-hover:bg-purple-600 group-hover:text-white transition-colors">
+            <div className="w-12 h-12 rounded-xl bg-purple-50 dark:bg-purple-950/50 text-purple-600 dark:text-purple-400 flex items-center justify-center mb-4 group-hover:bg-purple-600 group-hover:text-white transition-colors">
               <Sparkles className="w-6 h-6" />
             </div>
-            <h2 className="text-base font-bold text-slate-900 mb-1">AI Writing Refinement</h2>
-            <p className="text-xs text-slate-500 leading-relaxed">
+            <h2 className="text-base font-bold text-foreground mb-1">AI Writing Refinement</h2>
+            <p className="text-xs text-muted-foreground leading-relaxed">
               Enhance academic tone, eliminate passive voice, and improve syntactic clarity.
             </p>
           </div>
-          <div className="mt-5 pt-4 border-t border-slate-100 flex items-center justify-between text-xs font-semibold text-purple-600">
+          <div className="mt-5 pt-4 border-t border-border flex items-center justify-between text-xs font-semibold text-purple-600 dark:text-purple-400">
             <span>Start Assistant</span>
             <ArrowUpRight className="w-4 h-4" />
           </div>
@@ -117,22 +118,22 @@ export const StudentDashboardPage: React.FC = () => {
 
       {/* Quota Tracker & Recent Scans */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <div className="lg:col-span-2 bg-white rounded-2xl border border-slate-200 p-6 shadow-2xs">
+        <div className="lg:col-span-2 bg-card rounded-2xl border border-border p-6 shadow-2xs">
           <div className="flex items-center justify-between mb-4">
-            <h2 className="text-base font-bold text-slate-900">Recent Integrity Reports</h2>
-            <span className="text-xs text-slate-400">Past 30 Days</span>
+            <h2 className="text-base font-bold text-foreground">Recent Integrity Reports</h2>
+            <span className="text-xs text-muted-foreground">Past 30 Days</span>
           </div>
 
-          <div className="divide-y divide-slate-100">
+          <div className="divide-y divide-border">
             {recentScans.map((scan) => (
               <div key={scan.id} className="py-3.5 flex items-center justify-between">
                 <div className="min-w-0 pr-4">
-                  <p className="text-sm font-semibold text-slate-800 truncate">{scan.title}</p>
-                  <div className="flex items-center space-x-2 text-xs text-slate-400 mt-0.5">
+                  <p className="text-sm font-semibold text-foreground truncate">{scan.title}</p>
+                  <div className="flex items-center space-x-2 text-xs text-muted-foreground mt-0.5">
                     <Clock className="w-3.5 h-3.5" />
                     <span>{scan.date}</span>
                     <span>•</span>
-                    <span className="text-indigo-600 font-medium">
+                    <span className="text-indigo-600 dark:text-indigo-400 font-medium">
                       {scan.originality}% Original
                     </span>
                   </div>
@@ -147,41 +148,41 @@ export const StudentDashboardPage: React.FC = () => {
           </div>
         </div>
 
-        <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-2xs flex flex-col justify-between">
+        <div className="bg-card rounded-2xl border border-border p-6 shadow-2xs flex flex-col justify-between">
           <div>
             <div className="flex items-center space-x-2 mb-4">
-              <ShieldCheck className="w-5 h-5 text-indigo-600" />
-              <h2 className="text-base font-bold text-slate-900">Monthly Allowance</h2>
+              <ShieldCheck className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />
+              <h2 className="text-base font-bold text-foreground">Monthly Allowance</h2>
             </div>
-            <p className="text-xs text-slate-500 mb-6">
+            <p className="text-xs text-muted-foreground mb-6">
               Institutional quota resets on the 1st of every month.
             </p>
 
             <div className="space-y-4">
               <div>
                 <div className="flex justify-between text-xs font-semibold mb-1.5">
-                  <span className="text-slate-600">Integrity Scans</span>
-                  <span className="text-slate-900">4 / 20 Scans</span>
+                  <span className="text-muted-foreground">Integrity Scans</span>
+                  <span className="text-foreground">4 / 20 Scans</span>
                 </div>
-                <div className="w-full h-2.5 bg-slate-100 rounded-full overflow-hidden">
+                <div className="w-full h-2.5 bg-muted rounded-full overflow-hidden">
                   <div className="h-full bg-indigo-600 rounded-full" style={{ width: '20%' }} />
                 </div>
               </div>
 
               <div>
                 <div className="flex justify-between text-xs font-semibold mb-1.5">
-                  <span className="text-slate-600">Page Length Limit</span>
-                  <span className="text-slate-900">25 Pages / Doc</span>
+                  <span className="text-muted-foreground">Page Length Limit</span>
+                  <span className="text-foreground">25 Pages / Doc</span>
                 </div>
-                <div className="w-full h-2.5 bg-slate-100 rounded-full overflow-hidden">
+                <div className="w-full h-2.5 bg-muted rounded-full overflow-hidden">
                   <div className="h-full bg-emerald-500 rounded-full" style={{ width: '100%' }} />
                 </div>
               </div>
             </div>
           </div>
 
-          <div className="mt-6 pt-4 border-t border-slate-100 text-center">
-            <span className="text-xs text-slate-400">
+          <div className="mt-6 pt-4 border-t border-border text-center">
+            <span className="text-xs text-muted-foreground">
               Need higher capacity? Request a Faculty Upgrade.
             </span>
           </div>

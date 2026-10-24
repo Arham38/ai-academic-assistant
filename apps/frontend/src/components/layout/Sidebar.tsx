@@ -108,23 +108,23 @@ export const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, onToggleCollapse,
 
       {/* Active Role Indicator Card (when expanded) */}
       {!isCollapsed && (
-        <div className="px-4 py-3 mx-3 mb-2 bg-slate-50 border border-slate-200 rounded-xl shrink-0">
-          <div className="flex items-center space-x-2 text-xs font-semibold text-slate-700 mb-1">
+        <div className="px-4 py-3 mx-3 mb-2 bg-muted/50 border border-border rounded-xl shrink-0">
+          <div className="flex items-center space-x-2 text-xs font-semibold text-foreground mb-1">
             <Sparkles className="w-3.5 h-3.5 text-indigo-500" />
             <span>Active Role: {role ?? 'STUDENT'}</span>
           </div>
-          <p className="text-[11px] text-slate-500 truncate">
-            {user?.email ?? 'scholar@institution.edu'}
+          <p className="text-[11px] text-muted-foreground truncate">
+            {user?.email || 'Authenticated User'}
           </p>
         </div>
       )}
 
       {/* Desktop Collapse Toggle Footer */}
-      <div className="p-3 border-t border-slate-200 shrink-0">
+      <div className="p-3 border-t border-border shrink-0">
         <button
           type="button"
           onClick={onToggleCollapse}
-          className={`w-full flex items-center rounded-xl p-2.5 text-xs font-medium text-slate-500 hover:text-slate-800 hover:bg-slate-100 transition-colors ${
+          className={`w-full flex items-center rounded-xl p-2.5 text-xs font-medium text-muted-foreground hover:text-foreground hover:bg-muted/80 transition-colors ${
             isCollapsed ? 'justify-center' : 'justify-between'
           }`}
           title={isCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
@@ -132,9 +132,9 @@ export const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, onToggleCollapse,
         >
           {!isCollapsed && <span>Collapse Sidebar</span>}
           {isCollapsed ? (
-            <ChevronRight className="w-4 h-4 text-slate-600" />
+            <ChevronRight className="w-4 h-4 text-muted-foreground" />
           ) : (
-            <ChevronLeft className="w-4 h-4 text-slate-600" />
+            <ChevronLeft className="w-4 h-4 text-muted-foreground" />
           )}
         </button>
       </div>

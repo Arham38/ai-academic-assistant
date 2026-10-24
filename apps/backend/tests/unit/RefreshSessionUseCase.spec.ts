@@ -104,6 +104,13 @@ describe('RefreshSessionUseCase Unit Tests', () => {
     expect(result).toEqual({
       accessToken: 'new.jwt.access.token',
       rawRefreshToken: 'new_rotated_opaque_token_128_hex',
+      user: {
+        id: 'user_123',
+        email: 'student@mit.edu',
+        role: 'STUDENT',
+        firstName: 'Student',
+        lastName: 'User',
+      },
     });
   });
 

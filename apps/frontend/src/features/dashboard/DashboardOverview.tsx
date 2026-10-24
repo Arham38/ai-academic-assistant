@@ -12,6 +12,7 @@ import {
   Sparkles,
 } from 'lucide-react';
 import { useAuth } from '../auth/hooks/useAuth';
+import { formatUserDisplayName } from '../../utils/userUtils';
 import { MetricCard } from './components/MetricCard';
 import { RecentDocumentsTable, RecentDocumentItem } from './components/RecentDocumentsTable';
 import { QuickActions } from './components/QuickActions';
@@ -122,34 +123,32 @@ export const DashboardOverview: React.FC<DashboardOverviewProps> = ({
     year: 'numeric',
   }).format(new Date());
 
-  const displayName = user?.firstName
-    ? `${user.firstName} ${user.lastName ?? ''}`.trim()
-    : 'Scholar';
+  const displayName = formatUserDisplayName(user);
 
   return (
     <div className="space-y-6">
       {/* 1. Welcome Header Banner */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 bg-white p-6 rounded-2xl border border-slate-200/80 shadow-xs">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 bg-card p-6 rounded-2xl border border-border shadow-xs">
         <div>
           <div className="flex items-center space-x-2">
-            <h1 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">
+            <h1 className="text-xl sm:text-2xl font-black text-foreground tracking-tight">
               Welcome back, {displayName}
             </h1>
             <span className="text-xl" role="img" aria-label="waving hand">
               👋
             </span>
           </div>
-          <p className="text-xs sm:text-sm text-slate-500 mt-1 flex items-center space-x-2">
+          <p className="text-xs sm:text-sm text-muted-foreground mt-1 flex items-center space-x-2">
             <span>Academic workspace initialized for</span>
-            <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-bold bg-indigo-50 text-indigo-700 border border-indigo-200">
+            <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-bold bg-indigo-50 dark:bg-indigo-950/60 text-indigo-700 dark:text-indigo-400 border border-indigo-200 dark:border-indigo-800">
               <Sparkles className="w-3 h-3 mr-1" />
               {role ?? 'STUDENT'}
             </span>
           </p>
         </div>
 
-        <div className="flex items-center space-x-2 text-xs font-medium text-slate-500 bg-slate-50 border border-slate-100 px-3 py-2 rounded-xl self-start sm:self-auto shrink-0">
-          <Calendar className="w-4 h-4 text-slate-400" />
+        <div className="flex items-center space-x-2 text-xs font-medium text-muted-foreground bg-muted/50 border border-border px-3 py-2 rounded-xl self-start sm:self-auto shrink-0">
+          <Calendar className="w-4 h-4 text-muted-foreground" />
           <span>{currentDateFormatted}</span>
         </div>
       </div>

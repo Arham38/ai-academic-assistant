@@ -1,4 +1,5 @@
 import { createBrowserRouter, Navigate } from 'react-router-dom';
+import React from 'react';
 import { App } from '../App';
 import { LoginPage } from '../pages/auth/LoginPage';
 import { RegisterPage } from '../pages/auth/RegisterPage';
@@ -15,6 +16,15 @@ import { RequireRole } from '../features/auth/components/RequireRole';
 import { PublicOnly } from '../features/auth/components/PublicOnly';
 import { PersistLogin } from '../features/auth/components/PersistLogin';
 import { DashboardLayout } from '../components/layout/DashboardLayout';
+import { useAuth } from '../features/auth/hooks/useAuth';
+
+const RootIndex: React.FC = () => {
+  const { isAuthenticated, token, user } = useAuth();
+  if (isAuthenticated && token && user) {
+    return <Navigate to="/dashboard" replace />;
+  }
+  return <Navigate to="/login" replace />;
+};
 
 export const router = createBrowserRouter([
   {
@@ -25,10 +35,10 @@ export const router = createBrowserRouter([
         path: '/',
         element: <App />,
         children: [
-          // Root index redirects straight to dashboard
+          // Root index routes to dashboard when authenticated, or login when unauthenticated
           {
             index: true,
-            element: <Navigate to="/dashboard" replace />,
+            element: <RootIndex />,
           },
 
           // Public routes (accessible only when logged out)
