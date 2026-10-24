@@ -20,7 +20,7 @@ from src.pipelines.extraction.docx_parser import DocxParser
 from src.pipelines.extraction.parser_interface import BaseParser
 from src.pipelines.extraction.pdf_parser import PDFParser
 from src.pipelines.extraction.txt_parser import TxtParser
-from src.pipelines.nlp.text_cleaner import TextCleaner
+from src.pipelines.nlp import MetadataExtractor, TextCleaner
 
 logger = logging.getLogger(__name__)
 
@@ -87,12 +87,14 @@ class DocumentProcessingService:
         db: AsyncIOMotorDatabase | None = None,
         parser_registry: dict[str, type[BaseParser]] | None = None,
         cleaner: TextCleaner | None = None,
+        metadata_extractor: MetadataExtractor | None = None,
     ):
         self._db = db
         self._parser_registry = (
             parser_registry if parser_registry is not None else PARSER_REGISTRY
         )
         self._cleaner = cleaner
+        self._metadata_extractor = metadata_extractor
 
     def _get_db(self) -> AsyncIOMotorDatabase:
         if self._db is not None:
@@ -107,8 +109,9 @@ class DocumentProcessingService:
         2. Validate path safety
         3. Resolve appropriate BaseParser strategy via PARSER_REGISTRY
         4. Offload CPU-bound parsing to threadpool
-        5. Sanitize text via regex pipeline
-        6. Set status -> EMBEDDING, populate metadata (wordCount, pageCount if applicable)
+        5. Sanitize text via multi-stage NLP cleaner
+        6. Extract semantic document metadata (title, authors, abstract, keywords)
+        7. Set status -> EMBEDDING, populate metadata (wordCount, pageCount, abstract, etc.)
         - On Error: Set status -> FAILED, populate errorMessage
         """
         # Validate ObjectId representation
@@ -171,12 +174,25 @@ class DocumentProcessingService:
 
             word_count = len(cleaned_text.split())
 
-            # Step 6: Transition to EMBEDDING status with extracted metadata
+            # Step 6: Extract semantic document metadata (title, authors, abstract, keywords)
+            extractor = self._metadata_extractor or MetadataExtractor()
+            extracted_metadata = extractor.extract(cleaned_text)
+
+            # Step 7: Transition to EMBEDDING status with extracted metadata
             set_fields = {
                 "status": "EMBEDDING",
                 "metadata.wordCount": word_count,
+                "metadata.abstract": extracted_metadata.get("abstract"),
+                "metadata.keywords": extracted_metadata.get("keywords"),
                 "updatedAt": datetime.now(UTC),
             }
+            if extracted_metadata.get("title_extracted"):
+                set_fields["metadata.title_extracted"] = extracted_metadata[
+                    "title_extracted"
+                ]
+            if extracted_metadata.get("authors") is not None:
+                set_fields["metadata.authors"] = extracted_metadata["authors"]
+
             unset_fields = {
                 "errorMessage": "",
             }
