@@ -36,6 +36,14 @@ class AISettings(BaseSettings):
     CHUNK_OVERLAP: int = int(os.getenv("CHUNK_OVERLAP", "50"))  # token stride overlap
     TOKENIZER_ENCODING: str = os.getenv("TOKENIZER_ENCODING", "cl100k_base")
 
+    # Semantic Plagiarism Detection Thresholds
+    SIMILARITY_THRESHOLD_HIGH: float = float(
+        os.getenv("SIMILARITY_THRESHOLD_HIGH", "0.85")
+    )
+    SIMILARITY_THRESHOLD_MODERATE: float = float(
+        os.getenv("SIMILARITY_THRESHOLD_MODERATE", "0.75")
+    )
+
     model_config = {
         "env_file": ".env",
         "extra": "ignore",
