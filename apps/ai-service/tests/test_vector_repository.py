@@ -274,3 +274,98 @@ async def test_delete_security_guard(vector_repo):
         ValueError, match="document_id is strictly required for vector deletion"
     ):
         await vector_repo.delete_document_vectors(document_id="", user_id="user_1")
+
+
+@pytest.mark.asyncio
+async def test_get_document_vectors(vector_repo):
+    """Verify get_document_vectors retrieves all chunks for target document sorted by chunkIndex."""
+    doc_id = "doc_retrieve_test"
+    points = [
+        VectorPoint(
+            id=VectorRepository.generate_point_id(doc_id, "v1", 1),
+            vector=[0.2] * 384,
+            user_id="user_frank",
+            document_id=doc_id,
+            version_id="v1",
+            chunk_index=1,
+            text="Second chunk text.",
+        ),
+        VectorPoint(
+            id=VectorRepository.generate_point_id(doc_id, "v1", 0),
+            vector=[0.1] * 384,
+            user_id="user_frank",
+            document_id=doc_id,
+            version_id="v1",
+            chunk_index=0,
+            text="First chunk text.",
+        ),
+    ]
+    await vector_repo.upsert_vectors(points)
+
+    retrieved = await vector_repo.get_document_vectors(document_id=doc_id)
+    assert len(retrieved) == 2
+    # Verify sorted by chunk_index
+    assert retrieved[0].chunk_index == 0
+    assert retrieved[0].text == "First chunk text."
+    assert retrieved[1].chunk_index == 1
+    assert retrieved[1].text == "Second chunk text."
+    assert len(retrieved[0].vector) == 384
+
+
+@pytest.mark.asyncio
+async def test_search_batch_with_exclusion_filter(vector_repo):
+    """Verify search_batch executes batched queries and filters out target document ID."""
+    doc_target = "doc_target_123"
+    doc_corpus_1 = "doc_corpus_abc"
+    doc_corpus_2 = "doc_corpus_xyz"
+
+    vec_a = [1.0] + [0.0] * 383
+    vec_b = [0.0, 1.0] + [0.0] * 382
+
+    points = [
+        VectorPoint(
+            id=VectorRepository.generate_point_id(doc_target, "v1", 0),
+            vector=vec_a,
+            user_id="user_1",
+            document_id=doc_target,
+            version_id="v1",
+            chunk_index=0,
+            text="Target chunk 0",
+        ),
+        VectorPoint(
+            id=VectorRepository.generate_point_id(doc_corpus_1, "v1", 0),
+            vector=vec_a,
+            user_id="user_2",
+            document_id=doc_corpus_1,
+            version_id="v1",
+            chunk_index=0,
+            text="Corpus 1 chunk 0",
+        ),
+        VectorPoint(
+            id=VectorRepository.generate_point_id(doc_corpus_2, "v1", 0),
+            vector=vec_b,
+            user_id="user_3",
+            document_id=doc_corpus_2,
+            version_id="v1",
+            chunk_index=0,
+            text="Corpus 2 chunk 0",
+        ),
+    ]
+    await vector_repo.upsert_vectors(points)
+
+    # Batch query with 2 vectors, excluding doc_target
+    results = await vector_repo.search_batch(
+        query_vectors=[vec_a, vec_b],
+        filter_out_doc_id=doc_target,
+        limit=1,
+    )
+
+    assert len(results) == 2
+    # Query 1 matches Corpus 1 (identical vector), NOT Target
+    assert len(results[0]) == 1
+    assert results[0][0].document_id == doc_corpus_1
+    assert results[0][0].document_id != doc_target
+
+    # Query 2 matches Corpus 2
+    assert len(results[1]) == 1
+    assert results[1][0].document_id == doc_corpus_2
