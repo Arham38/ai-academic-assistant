@@ -21,7 +21,14 @@ from src.pipelines.extraction.docx_parser import DocxParser
 from src.pipelines.extraction.parser_interface import BaseParser
 from src.pipelines.extraction.pdf_parser import PDFParser
 from src.pipelines.extraction.txt_parser import TxtParser
-from src.pipelines.nlp import MetadataExtractor, TextCleaner
+from src.pipelines.nlp import (
+    MetadataExtractor,
+    RecursiveTokenChunker,
+    TextCleaner,
+)
+from src.pipelines.nlp import (
+    chunker as default_chunker,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -89,6 +96,7 @@ class DocumentProcessingService:
         parser_registry: dict[str, type[BaseParser]] | None = None,
         cleaner: TextCleaner | None = None,
         metadata_extractor: MetadataExtractor | None = None,
+        chunker: RecursiveTokenChunker | None = None,
     ):
         self._db = db
         self._parser_registry = (
@@ -96,6 +104,7 @@ class DocumentProcessingService:
         )
         self._cleaner = cleaner
         self._metadata_extractor = metadata_extractor
+        self._chunker = chunker
 
     def _get_db(self) -> AsyncIOMotorDatabase:
         if self._db is not None:
@@ -114,7 +123,8 @@ class DocumentProcessingService:
         4. Offload CPU-bound parsing to threadpool
         5. Sanitize text via multi-stage NLP cleaner
         6. Extract semantic document metadata (title, authors, abstract, keywords)
-        7. Set status -> EMBEDDING, populate metadata (wordCount, pageCount, abstract, etc.)
+        7. Chunk sanitized text into token-bounded semantic windows
+        8. Set status -> EMBEDDING, populate metadata (wordCount, chunkCount, pageCount, abstract, etc.)
            utilizing positional operator ($) for specific version isolation.
         - On Error: Set status -> FAILED, populate errorMessage
         """
@@ -207,10 +217,16 @@ class DocumentProcessingService:
             extractor = self._metadata_extractor or MetadataExtractor()
             extracted_metadata = extractor.extract(cleaned_text)
 
-            # Step 7: Transition to EMBEDDING status with extracted metadata
+            # Step 7: Chunk cleaned text respecting token boundaries
+            chunk_service = self._chunker or default_chunker
+            chunks = await run_in_threadpool(chunk_service.split, cleaned_text)
+            chunk_count = len(chunks)
+
+            # Step 8: Transition to EMBEDDING status with extracted metadata
             set_fields: dict[str, Any] = {
                 "status": "EMBEDDING",
                 "metadata.wordCount": word_count,
+                "metadata.chunkCount": chunk_count,
                 "metadata.abstract": extracted_metadata.get("abstract"),
                 "metadata.keywords": extracted_metadata.get("keywords"),
                 "updatedAt": datetime.now(UTC),
@@ -234,6 +250,7 @@ class DocumentProcessingService:
 
             version_meta: dict[str, Any] = {
                 "wordCount": word_count,
+                "chunkCount": chunk_count,
                 "abstract": extracted_metadata.get("abstract"),
                 "keywords": extracted_metadata.get("keywords"),
                 "language": doc_record.get("metadata", {}).get("language", "en"),
@@ -260,7 +277,7 @@ class DocumentProcessingService:
             )
             logger.info(
                 f"Document {document_id} successfully parsed: {page_count if page_count is not None else 'N/A'} pages, "
-                f"{word_count} words. Transitioned to EMBEDDING."
+                f"{word_count} words, {chunk_count} chunks. Transitioned to EMBEDDING."
             )
 
         except Exception as exc:
