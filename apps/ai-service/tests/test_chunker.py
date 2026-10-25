@@ -141,3 +141,90 @@ def test_chunker_iter_chunks_generator():
         assert c1.index == c2.index
         assert c1.text == c2.text
         assert c1.token_count == c2.token_count
+
+
+# =====================================================================
+# Scenario-Based Execution Architecture Tests (Parity with Visual UI)
+# =====================================================================
+
+
+def test_scenario_1_standard_paragraph_fast_path():
+    """Execution Scenario 1: Standard Paragraph (~300 tokens).
+
+    Workflow:
+    1. Ingest clean text input (300 tokens).
+    2. Evaluate limit: Token count < 400? -> YES.
+    3. Yield directly as single chunk without unnecessary splitting.
+    """
+    sentence = "Deep neural architectures facilitate academic knowledge synthesis across scientific domains. "
+    text = (sentence * 25).strip()  # ~300 tokens
+
+    chunker = RecursiveTokenChunker(chunk_size=400, chunk_overlap=50)
+    token_count = chunker.count_tokens(text)
+    assert 250 <= token_count <= 350
+    assert token_count < 400
+
+    chunks = chunker.split(text)
+    assert len(chunks) == 1
+    assert chunks[0].index == 0
+    assert chunks[0].token_count == token_count
+    assert chunks[0].text == text
+
+
+def test_scenario_2_massive_text_block_paragraph_split():
+    """Execution Scenario 2: Massive Text Block (~1200 tokens).
+
+    Workflow:
+    1. Ingest large text document (~1200 tokens).
+    2. Evaluate limit: Token count < 400? -> NO.
+    3. Split by double line breaks (\\n\\n Paragraph boundaries).
+    4. Recursively evaluate paragraph pieces (< 400 tokens -> YES).
+    5. Merge split pieces with 50-token overlap.
+    """
+    para = (
+        "Academic research requires meticulous methodology and empirical verification. "
+        * 30
+    )  # ~300 tokens
+    doc = f"{para}\n\n{para}\n\n{para}\n\n{para}"  # ~1200 tokens
+
+    chunker = RecursiveTokenChunker(chunk_size=400, chunk_overlap=50)
+    total_tokens = chunker.count_tokens(doc)
+    assert total_tokens > 1000
+
+    chunks = chunker.split(doc)
+    # Must produce multiple chunks
+    assert len(chunks) >= 3
+    # Every chunk strictly within 400 token ceiling
+    for i, c in enumerate(chunks):
+        assert c.index == i
+        assert c.token_count <= 400
+
+
+def test_scenario_3_no_paragraph_breaks_code_block_fallback():
+    """Execution Scenario 3: No Paragraph Breaks / Code Block (~600 tokens).
+
+    Workflow:
+    1. Ingest contiguous code block or raw text without \\n\\n.
+    2. Evaluate limit: Token count < 400? -> NO.
+    3. Attempt \\n\\n split -> Chunk still > 400 tokens.
+    4. Fallback to \\n (Lines) or '. ' (Sentence) boundary split.
+    5. Route valid sub-chunks to Merge with 50-token overlap.
+    """
+    lines = [
+        f"def compute_attention_layer_{i}(query: Tensor, key: Tensor, value: Tensor) -> Tensor:"
+        f" return softmax(query @ key.T) @ value"
+        for i in range(1, 30)
+    ]
+    # Joined by single newline only (no double newlines)
+    code_block = "\n".join(lines)
+
+    chunker = RecursiveTokenChunker(chunk_size=400, chunk_overlap=50)
+    total_tokens = chunker.count_tokens(code_block)
+    assert total_tokens > 400
+
+    chunks = chunker.split(code_block)
+    assert len(chunks) >= 2
+    for c in chunks:
+        assert c.token_count <= 400
+        # Preserved code lines
+        assert "compute_attention_layer" in c.text
