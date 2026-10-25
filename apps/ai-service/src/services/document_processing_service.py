@@ -16,7 +16,13 @@ from src.core.exceptions import (
     PathTraversalSecurityError,
     UnsupportedMimeTypeError,
 )
+from src.infrastructure.ai.embedding_provider import IEmbeddingProvider
+from src.infrastructure.ai.hf_embedding_service import HFEmbeddingService
 from src.infrastructure.database.mongo_client import get_database
+from src.infrastructure.database.vector_repository import (
+    VectorPoint,
+    VectorRepository,
+)
 from src.pipelines.extraction.docx_parser import DocxParser
 from src.pipelines.extraction.parser_interface import BaseParser
 from src.pipelines.extraction.pdf_parser import PDFParser
@@ -97,6 +103,8 @@ class DocumentProcessingService:
         cleaner: TextCleaner | None = None,
         metadata_extractor: MetadataExtractor | None = None,
         chunker: RecursiveTokenChunker | None = None,
+        embedding_service: IEmbeddingProvider | None = None,
+        vector_repository: VectorRepository | None = None,
     ):
         self._db = db
         self._parser_registry = (
@@ -105,11 +113,23 @@ class DocumentProcessingService:
         self._cleaner = cleaner
         self._metadata_extractor = metadata_extractor
         self._chunker = chunker
+        self._embedding_service = embedding_service
+        self._vector_repository = vector_repository
 
     def _get_db(self) -> AsyncIOMotorDatabase:
         if self._db is not None:
             return self._db
         return get_database()
+
+    def _get_embedding_service(self) -> IEmbeddingProvider:
+        if self._embedding_service is not None:
+            return self._embedding_service
+        return HFEmbeddingService()
+
+    def _get_vector_repository(self) -> VectorRepository:
+        if self._vector_repository is not None:
+            return self._vector_repository
+        return VectorRepository()
 
     async def process_document(
         self, document_id: str, storage_uri: str, version_id: str | None = None
@@ -125,7 +145,8 @@ class DocumentProcessingService:
         6. Extract semantic document metadata (title, authors, abstract, keywords)
         7. Chunk sanitized text into token-bounded semantic windows
         8. Set status -> EMBEDDING, populate metadata (wordCount, chunkCount, pageCount, abstract, etc.)
-           utilizing positional operator ($) for specific version isolation.
+        9. Batch vectorize chunks (augmented with title) and upsert VectorPoints into Qdrant
+        10. Finalize status -> COMPLETED (utilizing positional operator ($) for specific version isolation)
         - On Error: Set status -> FAILED, populate errorMessage
         """
         # Validate ObjectId representation
@@ -278,6 +299,59 @@ class DocumentProcessingService:
             logger.info(
                 f"Document {document_id} successfully parsed: {page_count if page_count is not None else 'N/A'} pages, "
                 f"{word_count} words, {chunk_count} chunks. Transitioned to EMBEDDING."
+            )
+
+            # Step 9: Batch embedding generation and vector upsert into Qdrant
+            if chunks:
+                embedder = self._get_embedding_service()
+                vector_repo = self._get_vector_repository()
+
+                doc_title = extracted_metadata.get("title_extracted") or ""
+                # Metadata Injection (Augmented Chunking): anchor chunks semantically with title
+                chunk_texts = [
+                    f"Title: {doc_title}. Text: {c.text}" if doc_title else c.text
+                    for c in chunks
+                ]
+                embeddings = await run_in_threadpool(embedder.embed_batch, chunk_texts)
+
+                user_id = str(doc_record.get("userId", "")).strip() or "anonymous"
+                v_id = version_id or "v1"
+
+                points = [
+                    VectorPoint(
+                        id=VectorRepository.generate_point_id(
+                            str(doc_oid), v_id, c.index
+                        ),
+                        vector=emb,
+                        user_id=user_id,
+                        document_id=str(doc_oid),
+                        version_id=v_id,
+                        chunk_index=c.index,
+                        text=c.text,
+                        metadata={
+                            "tokenCount": c.token_count,
+                            "title": doc_title or None,
+                        },
+                    )
+                    for c, emb in zip(chunks, embeddings, strict=True)
+                ]
+                await vector_repo.upsert_vectors(points)
+
+            # Step 10: Finalize document status -> COMPLETED
+            completed_set: dict[str, Any] = {
+                "status": "COMPLETED",
+                "updatedAt": datetime.now(UTC),
+            }
+            if version_id:
+                completed_set["versions.$.status"] = "COMPLETED"
+
+            await db.documents.update_one(
+                update_filter,
+                {"$set": completed_set},
+            )
+            logger.info(
+                f"Document {document_id} successfully embedded and indexed: {chunk_count} chunks. "
+                f"Transitioned to COMPLETED."
             )
 
         except Exception as exc:
