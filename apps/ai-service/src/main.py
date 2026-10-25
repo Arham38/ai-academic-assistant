@@ -10,6 +10,10 @@ from fastapi.middleware.cors import CORSMiddleware
 from src.api.routers.internal import router as internal_router
 from src.infrastructure.ai.hf_embedding_service import HFEmbeddingService
 from src.infrastructure.database.mongo_client import close_mongo_client
+from src.infrastructure.database.qdrant_client import (
+    close_qdrant_client,
+    init_qdrant_schema,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -19,7 +23,7 @@ async def lifespan(app: FastAPI):
     """Lifecycle manager handling startup initialization and graceful shutdown."""
     logger.info("Initializing AI Microservice infrastructure...")
 
-    # Initialize singleton embedding service and attach to app.state
+    # 1. Initialize singleton embedding service and attach to app.state
     try:
         embedding_service = HFEmbeddingService()
         app.state.embedding_service = embedding_service
@@ -34,9 +38,19 @@ async def lifespan(app: FastAPI):
             "Model will be loaded on demand."
         )
 
+    # 2. Provision Qdrant collection and multi-tenant payload indexes
+    try:
+        qdrant_ready = await init_qdrant_schema()
+        app.state.qdrant_ready = qdrant_ready
+    except Exception as q_exc:
+        logger.warning(f"Qdrant vector database initialization deferred: {q_exc}")
+        app.state.qdrant_ready = False
+
     yield
 
+    # Shutdown hooks
     await close_mongo_client()
+    await close_qdrant_client()
 
 
 app = FastAPI(
@@ -70,6 +84,9 @@ async def health_check() -> dict[str, Any]:
             embedding_service.model_name
             if embedding_service
             else "BAAI/bge-small-en-v1.5"
+        ),
+        "qdrant": (
+            "connected" if getattr(app.state, "qdrant_ready", False) else "unconnected"
         ),
     }
 
