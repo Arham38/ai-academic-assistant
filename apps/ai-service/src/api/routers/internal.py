@@ -18,6 +18,10 @@ from src.services.document_processing_service import (
     DocumentProcessingService,
     document_processing_service,
 )
+from src.services.plagiarism_detector_service import (
+    PlagiarismDetectorService,
+    plagiarism_detector_service,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -118,3 +122,97 @@ async def process_document_endpoint(
         message="Document processing initiated.",
         documentId=payload.document_id,
     )
+
+
+class AnalyzePlagiarismRequest(BaseModel):
+    """Schema for plagiarism analysis request."""
+
+    document_id: str = Field(
+        ...,
+        alias="documentId",
+        description="MongoDB ObjectId of the document to evaluate",
+    )
+    version_id: str | None = Field(
+        default=None,
+        alias="versionId",
+        description="Optional version UUID for historical version analysis",
+    )
+
+    model_config = {
+        "populate_by_name": True,
+    }
+
+
+class MatchedSourceSchema(BaseModel):
+    """Source attribution payload identifying a similar corpus match."""
+
+    document_id: str = Field(..., alias="documentId")
+    title: str = Field(default="", description="Source document title")
+    text: str = Field(default="", description="Matching source snippet text")
+
+    model_config = {
+        "populate_by_name": True,
+    }
+
+
+class FlaggedChunkSchema(BaseModel):
+    """Detailed record of an individual text chunk exceeding similarity threshold."""
+
+    chunk_index: int = Field(..., alias="chunkIndex")
+    text: str = Field(..., description="Target document chunk text")
+    similarity_score: float = Field(..., alias="similarityScore")
+    severity: str = Field(..., description="HIGH or MODERATE severity category")
+    matched_source: MatchedSourceSchema = Field(..., alias="matchedSource")
+
+    model_config = {
+        "populate_by_name": True,
+    }
+
+
+class PlagiarismReportResponse(BaseModel):
+    """Comprehensive semantic plagiarism evaluation report."""
+
+    overall_score: float = Field(..., alias="overallScore")
+    flagged_chunks: list[FlaggedChunkSchema] = Field(
+        default_factory=list, alias="flaggedChunks"
+    )
+
+    model_config = {
+        "populate_by_name": True,
+    }
+
+
+@router.post(
+    "/api/internal/v1/analyze/plagiarism",
+    status_code=status.HTTP_200_OK,
+    response_model=PlagiarismReportResponse,
+    dependencies=[Depends(verify_internal_secret)],
+    summary="Execute semantic plagiarism analysis on document vectors",
+)
+@router.post(
+    "/internal/v1/analyze/plagiarism",
+    status_code=status.HTTP_200_OK,
+    response_model=PlagiarismReportResponse,
+    dependencies=[Depends(verify_internal_secret)],
+    include_in_schema=False,
+)
+async def analyze_plagiarism_endpoint(
+    payload: AnalyzePlagiarismRequest,
+    service: Annotated[
+        PlagiarismDetectorService, Depends(lambda: plagiarism_detector_service)
+    ],
+) -> PlagiarismReportResponse:
+    """Compares document chunk vectors against Qdrant vector corpus with self-exclusion.
+
+    Returns overall originality score and detailed flagged chunks with matched source attribution.
+    """
+    logger.info(
+        f"Received plagiarism analysis request for document: {payload.document_id} (version: {payload.version_id})"
+    )
+
+    report = await service.analyze_document(
+        document_id=payload.document_id,
+        version_id=payload.version_id,
+    )
+
+    return PlagiarismReportResponse.model_validate(report.to_dict())
