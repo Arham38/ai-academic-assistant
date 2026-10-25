@@ -1,5 +1,6 @@
 """NLP cleaning and normalization pipeline modules."""
 
+from src.pipelines.nlp.chunker import RecursiveTokenChunker, TextChunk, chunker
 from src.pipelines.nlp.cleaner_rules import (
     CITATION_BRACKET_REGEX,
     CONTROL_CHAR_REGEX,
@@ -26,6 +27,9 @@ __all__ = [
     "MetadataExtractor",
     "PAGE_ARTIFACT_REGEX",
     "PAGE_NUMBER_REGEX",
+    "RecursiveTokenChunker",
+    "TextChunk",
     "TextCleaner",
     "URL_REGEX",
+    "chunker",
 ]
