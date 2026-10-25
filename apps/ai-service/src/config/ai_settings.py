@@ -31,6 +31,11 @@ class AISettings(BaseSettings):
     # Normalization flag for unit vector length (required for cosine/dot product equivalence)
     NORMALIZE_EMBEDDINGS: bool = True
 
+    # NLP Semantic Chunking Parameters
+    CHUNK_SIZE: int = int(os.getenv("CHUNK_SIZE", "400"))  # target tokens per chunk
+    CHUNK_OVERLAP: int = int(os.getenv("CHUNK_OVERLAP", "50"))  # token stride overlap
+    TOKENIZER_ENCODING: str = os.getenv("TOKENIZER_ENCODING", "cl100k_base")
+
     model_config = {
         "env_file": ".env",
         "extra": "ignore",
