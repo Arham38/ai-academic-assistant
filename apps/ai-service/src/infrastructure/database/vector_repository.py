@@ -11,6 +11,7 @@ from qdrant_client.models import (
     Filter,
     MatchValue,
     PointStruct,
+    QueryRequest,
 )
 from src.config.qdrant_settings import qdrant_settings
 from src.infrastructure.database.qdrant_client import get_qdrant_client
@@ -268,6 +269,170 @@ class VectorRepository:
             ),
         )
         return count_response.count
+
+    async def get_document_vectors(
+        self,
+        document_id: str,
+        version_id: str | None = None,
+        user_id: str | None = None,
+    ) -> list[VectorPoint]:
+        """Retrieves all vector points and payloads for a specific document.
+
+        Args:
+            document_id: The target document ID.
+            version_id: Optional specific version filter.
+            user_id: Optional tenant isolation filter.
+
+        Returns:
+            List of VectorPoint instances sorted by chunk_index.
+        """
+        if not document_id or not document_id.strip():
+            return []
+
+        client = self._get_client()
+
+        must_conditions: list[Any] = [
+            FieldCondition(
+                key="documentId", match=MatchValue(value=document_id.strip())
+            )
+        ]
+        if version_id and version_id.strip():
+            must_conditions.append(
+                FieldCondition(
+                    key="versionId", match=MatchValue(value=version_id.strip())
+                )
+            )
+        if user_id and user_id.strip():
+            must_conditions.append(
+                FieldCondition(key="userId", match=MatchValue(value=user_id.strip()))
+            )
+
+        scroll_filter = Filter(must=must_conditions)
+
+        all_points: list[VectorPoint] = []
+        offset = None
+
+        while True:
+            records, next_offset = await client.scroll(
+                collection_name=self._collection_name,
+                scroll_filter=scroll_filter,
+                with_vectors=True,
+                with_payload=True,
+                limit=100,
+                offset=offset,
+            )
+
+            for record in records:
+                payload = record.payload or {}
+                vector_data = record.vector
+                if isinstance(vector_data, list):
+                    vector_floats = [float(v) for v in vector_data]
+                elif isinstance(vector_data, dict) and "default" in vector_data:
+                    vector_floats = [float(v) for v in vector_data["default"]]
+                else:
+                    vector_floats = []
+
+                all_points.append(
+                    VectorPoint(
+                        id=str(record.id),
+                        vector=vector_floats,
+                        user_id=str(payload.get("userId", "")),
+                        document_id=str(payload.get("documentId", "")),
+                        version_id=str(payload.get("versionId", "")),
+                        chunk_index=int(payload.get("chunkIndex", 0)),
+                        text=str(payload.get("text", "")),
+                        metadata=dict(payload.get("metadata", {})),
+                    )
+                )
+
+            if next_offset is None or not records:
+                break
+            offset = next_offset
+
+        all_points.sort(key=lambda p: p.chunk_index)
+        return all_points
+
+    async def search_batch(
+        self,
+        query_vectors: list[list[float]],
+        filter_out_doc_id: str,
+        limit: int = 1,
+        score_threshold: float | None = None,
+        user_id: str | None = None,
+    ) -> list[list[VectorSearchResult]]:
+        """Executes a batched similarity search across the vector corpus, explicitly filtering out the source document.
+
+        Args:
+            query_vectors: List of query embedding vectors (e.g. one per chunk).
+            filter_out_doc_id: The documentId to exclude from search results (preventing self-plagiarism flags).
+            limit: Maximum closest matches to return per query vector.
+            score_threshold: Optional minimum cosine similarity score cutoff.
+            user_id: Optional user filter (if restricting to same tenant's previous works).
+
+        Returns:
+            List of search result lists, parallel to the input query_vectors.
+        """
+        if not query_vectors:
+            return []
+
+        client = self._get_client()
+
+        must_not_conditions: list[Any] = []
+        if filter_out_doc_id and filter_out_doc_id.strip():
+            must_not_conditions.append(
+                FieldCondition(
+                    key="documentId",
+                    match=MatchValue(value=filter_out_doc_id.strip()),
+                )
+            )
+
+        must_conditions: list[Any] = []
+        if user_id and user_id.strip():
+            must_conditions.append(
+                FieldCondition(key="userId", match=MatchValue(value=user_id.strip()))
+            )
+
+        query_filter = Filter(
+            must=must_conditions if must_conditions else None,
+            must_not=must_not_conditions if must_not_conditions else None,
+        )
+
+        requests = [
+            QueryRequest(
+                query=qv,
+                filter=query_filter,
+                limit=limit,
+                score_threshold=score_threshold,
+                with_payload=True,
+            )
+            for qv in query_vectors
+        ]
+
+        batch_responses = await client.query_batch_points(
+            collection_name=self._collection_name,
+            requests=requests,
+        )
+
+        batch_results: list[list[VectorSearchResult]] = []
+        for resp in batch_responses:
+            query_results: list[VectorSearchResult] = []
+            for point in resp.points:
+                payload = point.payload or {}
+                query_results.append(
+                    VectorSearchResult(
+                        id=str(point.id),
+                        score=float(point.score or 0.0),
+                        user_id=str(payload.get("userId", "")),
+                        document_id=str(payload.get("documentId", "")),
+                        version_id=str(payload.get("versionId", "")),
+                        chunk_index=int(payload.get("chunkIndex", 0)),
+                        text=str(payload.get("text", "")),
+                        metadata=dict(payload.get("metadata", {})),
+                    )
+                )
+            batch_results.append(query_results)
+
+        return batch_results
 
 
 vector_repository = VectorRepository()
